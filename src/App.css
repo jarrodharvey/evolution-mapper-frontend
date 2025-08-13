@@ -2,7 +2,9 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  transition: all 0.3s ease;
 }
+
 
 .App-header {
   text-align: center;
@@ -26,17 +28,69 @@
   border-radius: 8px;
   padding: 30px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.App-main.floating-mode {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: none;
+  margin: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.App.floating-mode {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .species-selector {
   margin-bottom: 30px;
+  transition: all 0.3s ease;
+}
+
+
+.species-selector-header {
+  margin-bottom: 15px;
 }
 
 .species-selector h2 {
   color: #2c3e50;
-  margin-bottom: 15px;
+  margin: 0;
   font-size: 1.5rem;
 }
+
+
+.floating-exit-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(52, 152, 219, 0.9);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.floating-exit-button:hover {
+  background: rgba(41, 128, 185, 0.95);
+  transform: scale(1.05);
+}
+
 
 .species-select {
   margin-bottom: 15px;
@@ -143,6 +197,31 @@
   margin-top: 30px;
   padding-top: 30px;
   border-top: 2px solid #ecf0f1;
+  transition: all 0.3s ease;
+}
+
+
+.tree-display.floating-mode {
+  margin: 0;
+  padding: 0;
+  border: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-display.floating-mode .tree-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.tree-display.floating-mode .tree-iframe {
+  flex: 1;
+}
+
+.tree-container {
+  position: relative;
 }
 
 .tree-display h2 {
@@ -156,6 +235,153 @@
   border: 2px solid #e9ecef;
   border-radius: 6px;
   background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+.tree-display.floating-mode .tree-iframe {
+  border: none;
+  border-radius: 0;
+}
+
+.floating-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  padding: 15px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 10000;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.floating-toolbar.collapsed {
+  padding: 8px 20px;
+}
+
+.floating-collapse-button {
+  background: #95a5a6;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-width: 30px;
+}
+
+.floating-collapse-button:hover {
+  background: #7f8c8d;
+  transform: scale(1.05);
+}
+
+.floating-species-picker {
+  flex: 1;
+  max-width: 400px;
+  min-width: 250px;
+}
+
+.floating-species-select {
+  font-size: 0.9rem;
+}
+
+.floating-species-select .css-control {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.floating-species-select .css-control--is-focused {
+  border-color: #3498db;
+  box-shadow: 0 0 0 1px #3498db;
+}
+
+.floating-species-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #7f8c8d;
+  font-size: 0.85rem;
+  font-weight: 500;
+  min-width: 120px;
+}
+
+.floating-warning {
+  color: #e74c3c !important;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.floating-exit-button {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.floating-exit-button:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+.floating-species-info {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.floating-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.floating-random-button,
+.floating-generate-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.floating-random-button {
+  background: #3498db;
+  color: white;
+}
+
+.floating-random-button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.floating-generate-button {
+  background: #27ae60;
+  color: white;
+}
+
+.floating-generate-button:hover:not(:disabled) {
+  background: #229954;
+}
+
+.floating-random-button:disabled,
+.floating-generate-button:disabled {
+  background: #95a5a6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
@@ -165,6 +391,66 @@
   
   .App-main {
     padding: 20px;
+  }
+  
+  .species-selector-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+
+  .floating-toolbar {
+    padding: 10px 15px;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .floating-toolbar.collapsed {
+    padding: 5px 15px;
+    justify-content: center;
+  }
+
+  .floating-collapse-button {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .floating-species-picker {
+    flex: 1 1 100%;
+    max-width: none;
+    min-width: unset;
+    order: 2;
+  }
+
+  .floating-species-info {
+    min-width: unset;
+    order: 1;
+  }
+
+  .floating-action-buttons {
+    order: 3;
+  }
+
+  .floating-exit-button {
+    order: 0;
+    align-self: flex-start;
+  }
+
+  .floating-exit-button {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+  }
+
+  .floating-species-info {
+    font-size: 0.8rem;
+  }
+
+  .floating-random-button,
+  .floating-generate-button {
+    padding: 5px 8px;
+    font-size: 0.7rem;
   }
   
   .action-buttons {

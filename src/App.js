@@ -8,6 +8,8 @@ function App() {
   const [treeHTML, setTreeHTML] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showFloatingControls, setShowFloatingControls] = useState(false);
+  const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const iframeRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
@@ -59,6 +61,7 @@ function App() {
       const data = await response.json();
       if (data.success) {
         setTreeHTML(data.html);
+        setShowFloatingControls(true); // Automatically enter floating mode
       } else {
         throw new Error(data.error || 'Tree generation failed');
       }
@@ -86,6 +89,7 @@ function App() {
         }));
         setSelectedSpecies(randomOptions);
         setTreeHTML(data.html);
+        setShowFloatingControls(true); // Automatically enter floating mode
       } else {
         throw new Error('Failed to get random species');
       }
@@ -123,78 +127,171 @@ function App() {
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
+  const getTreeHeight = () => {
+    if (!treeHTML) return '600px';
+    if (showFloatingControls) {
+      return '100%'; // Use flexbox instead of fixed height
+    }
+    return '600px'; // Default height when expanded
+  };
+
+  const toggleFloatingControls = () => {
+    setShowFloatingControls(!showFloatingControls);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Evolution Mapper</h1>
-        <p>Select 3-20 species to see how they evolved!</p>
-      </header>
+    <div className={`App ${showFloatingControls ? 'floating-mode' : ''}`}>
+      {!showFloatingControls && (
+        <header className="App-header">
+          <h1>Evolution Mapper</h1>
+          <p>Select 3-20 species to see how they evolved!</p>
+        </header>
+      )}
       
-      <main className="App-main">
-        <div className="species-selector">
-          <h2>Species Selection</h2>
-          <AsyncSelect
-            isMulti
-            cacheOptions
-            defaultOptions={false}
-            loadOptions={loadSpecies}
-            value={selectedSpecies}
-            onChange={setSelectedSpecies}
-            placeholder="Search for species (e.g., whale, human, dog)..."
-            noOptionsMessage={({ inputValue }) => 
-              inputValue.length < 2 
-                ? 'Type 2+ characters to search'
-                : `No species found matching "${inputValue}"`
-            }
-            className="species-select"
-          />
+      {showFloatingControls && (
+        <div className={`floating-toolbar ${isToolbarCollapsed ? 'collapsed' : ''}`}>
+          <button 
+            className="floating-collapse-button"
+            onClick={() => setIsToolbarCollapsed(!isToolbarCollapsed)}
+            aria-label={isToolbarCollapsed ? 'Expand toolbar' : 'Collapse toolbar'}
+          >
+            {isToolbarCollapsed ? '▼' : '▲'}
+          </button>
           
-          <div className="selection-info">
-            <p>Selected: {selectedSpecies.length} species</p>
-            {selectedSpecies.length < 3 && (
-              <p className="warning">Please select at least 3 species</p>
-            )}
-            {selectedSpecies.length > 20 && (
-              <p className="warning">Please select no more than 20 species</p>
-            )}
+          {!isToolbarCollapsed && (
+            <>
+              <button 
+                className="floating-exit-button"
+                onClick={toggleFloatingControls}
+                aria-label="Exit tree view"
+              >
+                ← Exit Tree View
+              </button>
+              
+              <div className="floating-species-picker">
+                <AsyncSelect
+                  isMulti
+                  cacheOptions
+                  defaultOptions={false}
+                  loadOptions={loadSpecies}
+                  value={selectedSpecies}
+                  onChange={setSelectedSpecies}
+                  placeholder="Search species..."
+                  noOptionsMessage={({ inputValue }) => 
+                    inputValue.length < 2 
+                      ? 'Type 2+ characters'
+                      : `No species found`
+                  }
+                  className="floating-species-select"
+                />
+              </div>
+              
+              <div className="floating-species-info">
+                <span>Selected: {selectedSpecies.length} species</span>
+                {selectedSpecies.length < 3 && (
+                  <span className="floating-warning">Need 3+ species</span>
+                )}
+                {selectedSpecies.length > 20 && (
+                  <span className="floating-warning">Max 20 species</span>
+                )}
+              </div>
+              
+              <div className="floating-action-buttons">
+                <button 
+                  onClick={pickRandomSpecies}
+                  disabled={loading}
+                  className="floating-random-button"
+                >
+                  {loading ? 'Loading...' : 'Random'}
+                </button>
+                
+                <button 
+                  onClick={generateTree}
+                  disabled={!isValidSelection || loading}
+                  className="floating-generate-button"
+                >
+                  {loading ? 'Generating...' : 'Generate'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      <main className={`App-main ${showFloatingControls ? 'floating-mode' : ''}`}>
+        {!showFloatingControls && (
+          <div className="species-selector">
+            <div className="species-selector-header">
+              <h2>Species Selection</h2>
+            </div>
+            
+            <AsyncSelect
+              isMulti
+              cacheOptions
+              defaultOptions={false}
+              loadOptions={loadSpecies}
+              value={selectedSpecies}
+              onChange={setSelectedSpecies}
+              placeholder="Search for species (e.g., whale, human, dog)..."
+              noOptionsMessage={({ inputValue }) => 
+                inputValue.length < 2 
+                  ? 'Type 2+ characters to search'
+                  : `No species found matching "${inputValue}"`
+              }
+              className="species-select"
+            />
+            
+            <div className="selection-info">
+              <p>Selected: {selectedSpecies.length} species</p>
+              {selectedSpecies.length < 3 && (
+                <p className="warning">Please select at least 3 species</p>
+              )}
+              {selectedSpecies.length > 20 && (
+                <p className="warning">Please select no more than 20 species</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="action-buttons">
-          <button 
-            onClick={pickRandomSpecies}
-            disabled={loading}
-            className="random-button"
-          >
-            {loading ? 'Loading...' : 'Pick species for me'}
-          </button>
-          
-          <button 
-            onClick={generateTree}
-            disabled={!isValidSelection || loading}
-            className="generate-button"
-          >
-            {loading ? 'Generating...' : 'Show me how they evolved!'}
-          </button>
-        </div>
+        {!showFloatingControls && (
+          <div className="action-buttons">
+            <button 
+              onClick={pickRandomSpecies}
+              disabled={loading}
+              className="random-button"
+            >
+              {loading ? 'Loading...' : 'Pick species for me'}
+            </button>
+            
+            <button 
+              onClick={generateTree}
+              disabled={!isValidSelection || loading}
+              className="generate-button"
+            >
+              {loading ? 'Generating...' : 'Show me how they evolved!'}
+            </button>
+          </div>
+        )}
 
-        {error && (
+        {!showFloatingControls && error && (
           <div className="error-message">
             <p>{error}</p>
           </div>
         )}
 
-        {treeHTML && (
-          <div className="tree-display">
-            <h2>Evolutionary Tree</h2>
-            <iframe
-              ref={iframeRef}
-              width="100%"
-              height="600px"
-              frameBorder="0"
-              title="Phylogenetic Tree"
-              className="tree-iframe"
-            />
+        {treeHTML && showFloatingControls && (
+          <div className="tree-display floating-mode">
+            <div className="tree-container">
+              <iframe
+                ref={iframeRef}
+                width="100%"
+                height={getTreeHeight()}
+                frameBorder="0"
+                title="Phylogenetic Tree"
+                className="tree-iframe"
+              />
+              
+            </div>
           </div>
         )}
       </main>
