@@ -46,20 +46,13 @@ function App() {
 
     try {
       const speciesNames = selectedSpecies.map(species => species.value);
-      const apiKey = process.env.REACT_APP_API_KEY || API_CONFIG.API_KEY;
-      const response = await fetch(`${API_CONFIG.BASE_URL}/api/tree?api_key=${apiKey}`, {
+      const data = await apiRequest('/api/tree', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
         body: `species=${speciesNames.join(',')}`
       });
-
-      if (!response.ok) {
-        throw new Error(`Tree generation failed: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
       if (data.success) {
         setTreeHTML(data.html);
         setShowFloatingControls(true); // Automatically enter floating mode

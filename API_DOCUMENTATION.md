@@ -8,8 +8,7 @@
 All endpoints (except health check) require an API key.
 
 **Methods:**
-- **Header**: `X-API-Key: your-api-key`
-- **Query Parameter**: `?api_key=your-api-key`
+- **Header**: `X-API-Key: your-api-key` (Required - more secure)
 
 **Your API Token**: Store in `api-token.txt` (git-ignored)
 
@@ -181,7 +180,7 @@ const generateTree = async (speciesList) => {
 ```json
 {
   "success": false,
-  "error": "Invalid or missing API key. Include your API key in the 'X-API-Key' header or 'api_key' query parameter.",
+  "error": "Invalid or missing API key. Include your API key in the 'X-API-Key' header.",
   "documentation": "Contact the API administrator for access credentials."
 }
 ```

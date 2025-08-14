@@ -30,14 +30,13 @@ export const apiRequest = async (endpoint, options = {}) => {
   // Get API key from environment variable (more secure)
   const apiKey = process.env.REACT_APP_API_KEY || API_CONFIG.API_KEY;
   
-  // Workaround: Use query parameter for API key since CORS doesn't allow X-API-Key header
-  const separator = endpoint.includes('?') ? '&' : '?';
-  const url = `${API_CONFIG.BASE_URL}${endpoint}${separator}api_key=${apiKey}`;
+  const url = `${API_CONFIG.BASE_URL}${endpoint}`;
   
   const config = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'X-API-Key': apiKey,
       ...options.headers
     }
   };
