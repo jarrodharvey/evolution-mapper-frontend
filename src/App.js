@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncSelect from 'react-select/async';
 import { apiRequest, API_CONFIG } from './api-config';
+import Legend from './Legend';
 import './App.css';
 
 function App() {
@@ -290,7 +291,7 @@ function App() {
                 title="Phylogenetic Tree"
                 className="tree-iframe"
               />
-              
+              <Legend />
             </div>
           </div>
         )}
