@@ -1,5 +1,5 @@
 export const API_CONFIG = {
-  BASE_URL: process.env.NODE_ENV === 'development' ? '' : 'http://localhost:8000',
+  BASE_URL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
   API_KEY: process.env.REACT_APP_API_KEY || 'demo-key-12345',
   
   DEFAULT_HEADERS: {
