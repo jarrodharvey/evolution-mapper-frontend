@@ -16,7 +16,7 @@ services:
     http_path: /
   envs:
   - key: REACT_APP_BACKEND_URL
-    value: https://170.64.241.9
+    value: https://evolution-mapper.duckdns.org
   - key: REACT_APP_API_KEY
     value: evo-spzw1H4RZIQXAqcYNZ60NsJfKAG5BKBz
   build_command: npm ci && npm run build && npm install -g serve
