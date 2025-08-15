@@ -1,5 +1,9 @@
 // Environment detection and URL selection
 const getBackendUrl = () => {
+  // Check for runtime config first (bypasses build cache issues)
+  if (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.BACKEND_URL) {
+    return window.APP_CONFIG.BACKEND_URL;
+  }
   return process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
 };
 
