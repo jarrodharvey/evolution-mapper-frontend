@@ -1,4 +1,5 @@
 name: evolution-mapper-frontend
+region: syd1
 services:
 - name: web
   source_dir: /
@@ -21,3 +22,6 @@ services:
   - key: REACT_APP_API_KEY
     value: ${API_KEY}
   build_command: npm ci && npm run build && npm install -g serve
+network:
+  vpc:
+    id: 87822dbd-fdbb-4e1d-ba7a-116eaed3bbb2
