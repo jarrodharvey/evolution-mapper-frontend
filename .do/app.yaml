@@ -6,7 +6,7 @@ services:
   github:
     repo: jarrodharvey/evolution-mapper-frontend
     branch: main
-  run_command: node server.js
+  run_command: serve -s build -l $PORT
   environment_slug: node-js
   instance_count: 1
   instance_size_slug: basic-xxs
@@ -16,9 +16,9 @@ services:
     http_path: /
   envs:
   - key: DIGITAL_OCEAN_REACT_APP_BACKEND_URL
-    value: http://10.126.0.2:8000
+    value: https://170.64.214.223
   - key: LOCAL_REACT_APP_BACKEND_URL
     value: http://localhost:8000
   - key: REACT_APP_API_KEY
     value: evo-spzw1H4RZIQXAqcYNZ60NsJfKAG5BKBz
-  build_command: npm ci && npm run build
+  build_command: npm ci && npm run build && npm install -g serve
