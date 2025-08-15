@@ -4,9 +4,9 @@ services:
 - name: web
   source_dir: /
   github:
-    repo: evolution-mapper/evolution-mapper-frontend
+    repo: jarrodharvey/evolution-mapper-frontend
     branch: main
-  run_command: serve -s build -l 3000
+  run_command: node server.js
   environment_slug: node-js
   instance_count: 1
   instance_size_slug: basic-xxs
@@ -20,8 +20,5 @@ services:
   - key: LOCAL_REACT_APP_BACKEND_URL
     value: http://localhost:8000
   - key: REACT_APP_API_KEY
-    value: ${API_KEY}
-  build_command: npm ci && npm run build && npm install -g serve
-network:
-  vpc:
-    id: 87822dbd-fdbb-4e1d-ba7a-116eaed3bbb2
+    value: evo-spzw1H4RZIQXAqcYNZ60NsJfKAG5BKBz
+  build_command: npm ci && npm run build

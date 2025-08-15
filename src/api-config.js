@@ -2,7 +2,8 @@
 const getBackendUrl = () => {
   // Check if we're in production (DigitalOcean App Platform)
   if (process.env.NODE_ENV === 'production') {
-    return process.env.DIGITAL_OCEAN_REACT_APP_BACKEND_URL || 'http://10.126.0.2:8000';
+    // Use relative URL in production - will go through proxy
+    return '';
   }
   
   // Development environment (local)
