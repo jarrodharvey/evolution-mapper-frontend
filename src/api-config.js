@@ -1,5 +1,16 @@
+// Environment detection and URL selection
+const getBackendUrl = () => {
+  // Check if we're in production (DigitalOcean App Platform)
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.DIGITAL_OCEAN_REACT_APP_BACKEND_URL || 'http://10.126.0.2:8000';
+  }
+  
+  // Development environment (local)
+  return process.env.LOCAL_REACT_APP_BACKEND_URL || 'http://localhost:8000';
+};
+
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
+  BASE_URL: getBackendUrl(),
   API_KEY: process.env.REACT_APP_API_KEY || 'demo-key-12345',
   
   DEFAULT_HEADERS: {

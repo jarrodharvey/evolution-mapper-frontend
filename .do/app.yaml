@@ -1,0 +1,23 @@
+name: evolution-mapper-frontend
+services:
+- name: web
+  source_dir: /
+  github:
+    repo: evolution-mapper/evolution-mapper-frontend
+    branch: main
+  run_command: serve -s build -l 3000
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  routes:
+  - path: /
+  health_check:
+    http_path: /
+  envs:
+  - key: DIGITAL_OCEAN_REACT_APP_BACKEND_URL
+    value: http://10.126.0.2:8000
+  - key: LOCAL_REACT_APP_BACKEND_URL
+    value: http://localhost:8000
+  - key: REACT_APP_API_KEY
+    value: ${API_KEY}
+  build_command: npm ci && npm run build && npm install -g serve
