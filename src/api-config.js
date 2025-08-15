@@ -6,7 +6,7 @@ const getBackendUrl = () => {
 export const API_CONFIG = {
   BASE_URL: getBackendUrl(),
   API_KEY: process.env.REACT_APP_API_KEY || 'demo-key-12345',
-  // Force rebuild: Load Balancer HTTPS
+  // Force rebuild: DuckDNS HTTPS backend
   
   DEFAULT_HEADERS: {
     'Content-Type': 'application/json',
