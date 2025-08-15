@@ -12,8 +12,15 @@ app.use(express.static(path.join(__dirname, 'build')));
 app.use('/api', createProxyMiddleware({
   target: 'http://10.126.0.2:8000',
   changeOrigin: true,
+  pathRewrite: {
+    '^/api': '/api' // Keep /api prefix when forwarding
+  },
   headers: {
     'X-API-Key': process.env.REACT_APP_API_KEY || 'demo-key-12345'
+  },
+  onError: (err, req, res) => {
+    console.error('Proxy error:', err);
+    res.status(500).json({ error: 'Backend connection failed' });
   }
 }));
 
