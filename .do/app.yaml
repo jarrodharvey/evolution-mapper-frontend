@@ -16,7 +16,7 @@ services:
     http_path: /
   envs:
   - key: DIGITAL_OCEAN_REACT_APP_BACKEND_URL
-    value: https://170.64.214.223
+    value: http://170.64.241.9
   - key: LOCAL_REACT_APP_BACKEND_URL
     value: http://localhost:8000
   - key: REACT_APP_API_KEY
