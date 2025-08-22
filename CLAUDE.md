@@ -1,0 +1,1 @@
+- never hard code api keys in scripts!

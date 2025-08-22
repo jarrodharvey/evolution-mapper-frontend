@@ -708,3 +708,16 @@
     font-size: 0.75rem;
   }
 }
+
+/* Styles for dropped species highlighting in react-select */
+.species-select .css-1rhbuit-multiValue.dropped-species,
+.floating-species-select .css-1rhbuit-multiValue.dropped-species {
+  background-color: #fee !important;
+  border: 1px solid #e74c3c !important;
+}
+
+.species-select .css-12jo7m5.dropped-species,
+.floating-species-select .css-12jo7m5.dropped-species {
+  color: #e74c3c !important;
+  font-weight: 600 !important;
+}

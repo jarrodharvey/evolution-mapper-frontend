@@ -12,6 +12,7 @@ function App() {
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [showAncestorAges, setShowAncestorAges] = useState(false);
+  const [droppedSpecies, setDroppedSpecies] = useState([]);
   const iframeRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
@@ -79,6 +80,7 @@ function App() {
     if (data.success === true || data.success[0] === true) {
       setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
       setShowFloatingControls(true);
+      setDroppedSpecies([]); // Reset dropped species for regular tree
     } else {
       const errorMessage = Array.isArray(data.error) ? data.error[0] : data.error;
       throw new Error(errorMessage || 'Tree generation failed');
@@ -103,6 +105,7 @@ function App() {
         // Success - all species have ancestral data
         setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
         setShowFloatingControls(true);
+        setDroppedSpecies([]); // Reset dropped species since all species have data
       } else if (data.coverage && (Array.isArray(data.coverage) ? data.coverage[0] : data.coverage) === 'partial') {
         // Some species are missing ancestral data - notify user and retry with partial response
         const missingCommonNames = data.missing_common_names || [];
@@ -120,6 +123,9 @@ function App() {
         
         setError(`${missingCount} species lack ancestral data and will be excluded: ${displayNames}${moreText}. Generating tree with remaining species...`);
         
+        // Set dropped species for highlighting
+        setDroppedSpecies(missingCommonNames);
+        
         // Retry with allow_partial_response=true
         setTimeout(async () => {
           try {
@@ -134,8 +140,9 @@ function App() {
             if (retryData.success && (retryData.success === true || retryData.success[0] === true)) {
               setTreeHTML(Array.isArray(retryData.html) ? retryData.html[0] : retryData.html);
               setShowFloatingControls(true);
-              // Keep the error message visible longer in tree view so users can see which species were dropped
-              setTimeout(() => setError(null), 10000); // 10 seconds instead of 5
+              // Keep droppedSpecies state for highlighting - don't reset here
+              // Clear error message after shorter delay since it won't show in tree view
+              setTimeout(() => setError(null), 3000); // 3 seconds
             } else {
               const errorMessage = Array.isArray(retryData.error) ? retryData.error[0] : retryData.error;
               throw new Error(errorMessage || 'Dated tree generation failed');
@@ -239,6 +246,37 @@ function App() {
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
+  // Custom styles for react-select to highlight dropped species
+  const getCustomStyles = () => ({
+    multiValue: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        backgroundColor: isDropped ? '#fee' : provided.backgroundColor,
+        border: isDropped ? '1px solid #e74c3c' : provided.border,
+      };
+    },
+    multiValueLabel: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        color: isDropped ? '#e74c3c' : provided.color,
+        fontWeight: isDropped ? '600' : provided.fontWeight,
+      };
+    },
+    multiValueRemove: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        color: isDropped ? '#e74c3c' : provided.color,
+        ':hover': {
+          backgroundColor: isDropped ? '#e74c3c' : provided[':hover'].backgroundColor,
+          color: isDropped ? 'white' : provided[':hover'].color,
+        },
+      };
+    },
+  });
+
   const getTreeHeight = () => {
     if (!treeHTML) return '600px';
     if (showFloatingControls) {
@@ -295,6 +333,7 @@ function App() {
                       : `No species found`
                   }
                   className="floating-species-select"
+                  styles={getCustomStyles()}
                 />
               </div>
               
@@ -313,7 +352,12 @@ function App() {
                   <input
                     type="checkbox"
                     checked={showAncestorAges}
-                    onChange={(e) => setShowAncestorAges(e.target.checked)}
+                    onChange={(e) => {
+                      setShowAncestorAges(e.target.checked);
+                      if (!e.target.checked) {
+                        setDroppedSpecies([]);
+                      }
+                    }}
                   />
                   Show ancestor ages
                 </label>
@@ -365,6 +409,7 @@ function App() {
                   : `No species found matching "${inputValue}"`
               }
               className="species-select"
+              styles={getCustomStyles()}
             />
             
             <div className="selection-info">
@@ -382,7 +427,12 @@ function App() {
                 <input
                   type="checkbox"
                   checked={showAncestorAges}
-                  onChange={(e) => setShowAncestorAges(e.target.checked)}
+                  onChange={(e) => {
+                    setShowAncestorAges(e.target.checked);
+                    if (!e.target.checked) {
+                      setDroppedSpecies([]);
+                    }
+                  }}
                 />
                 Show ancestor ages
               </label>
@@ -423,7 +473,7 @@ function App() {
 
         {treeHTML && showFloatingControls && (
           <div className="tree-display floating-mode">
-            {error && (
+            {error && !error.includes('species lack ancestral data and will be excluded') && (
               <div className="floating-error-message">
                 <p>{error}</p>
               </div>
