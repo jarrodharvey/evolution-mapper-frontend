@@ -45,13 +45,14 @@ function App() {
     setError(null);
 
     try {
-      const speciesNames = selectedSpecies.map(species => species.value);
+      const commonNames = selectedSpecies.map(species => species.data.common);
+      const scientificNames = selectedSpecies.map(species => species.data.scientific);
       const data = await apiRequest('/api/tree', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `species=${speciesNames.join(',')}`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
       });
       if (data.success) {
         setTreeHTML(data.html);
