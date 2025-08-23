@@ -106,7 +106,7 @@ function App() {
   };
 
   const generateDatedTree = async (commonNames, scientificNames) => {
-    // First attempt with allow_partial_response=false to check for missing species
+    // Single API call with allow_partial_response=true to get both missing species info and tree HTML
     try {
       setLoadingPhase('Checking ancestral data availability...');
       console.log('Making dated tree request with species:', commonNames, scientificNames);
@@ -115,76 +115,65 @@ function App() {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&allow_partial_response=false`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&allow_partial_response=true`
       });
       
       console.log('Dated tree API response:', data);
       
       if (data.success && (data.success === true || data.success[0] === true)) {
-        // Success - all species have ancestral data
-        setLoadingPhase('Generating tree with ancestral ages...');
-        setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-        setShowFloatingControls(true);
-        setDroppedSpecies([]); // Reset dropped species since all species have data
-      } else if (data.coverage && (Array.isArray(data.coverage) ? data.coverage[0] : data.coverage) === 'partial') {
-        // Some species are missing ancestral data - notify user and retry with partial response
+        const coverage = Array.isArray(data.coverage) ? data.coverage[0] : data.coverage;
         const missingCommonNames = data.missing_common_names || [];
         const missingScientificNames = data.missing_scientific_names || [];
-        const missingCount = missingCommonNames.length;
         
-        // Create display names (prefer scientific names where available)
-        const missingDisplayNames = missingCommonNames.map((common, index) => {
-          const scientific = missingScientificNames[index];
-          return scientific && scientific !== common ? `${common} (${scientific})` : common;
-        });
-        
-        const displayNames = missingDisplayNames.slice(0, 3).join(', ');
-        const moreText = missingDisplayNames.length > 3 ? ` and ${missingDisplayNames.length - 3} more` : '';
-        
-        setError(`${missingCount} species lack ancestral data and will be excluded: ${displayNames}${moreText}. Generating tree with remaining species...`);
-        
-        // Set dropped species for highlighting
-        setDroppedSpecies(missingCommonNames);
-        
-        // Show countdown and retry with allow_partial_response=true
-        let timeLeft = 2;
-        setCountdown(timeLeft);
-        setLoadingPhase(`Continuing with available species...`);
-        
-        const countdownInterval = setInterval(() => {
-          timeLeft--;
+        if (coverage === 'partial' && missingCommonNames.length > 0) {
+          // Some species are missing ancestral data - show user feedback with same timing as before
+          const missingCount = missingCommonNames.length;
+          
+          // Create display names (prefer scientific names where available)
+          const missingDisplayNames = missingCommonNames.map((common, index) => {
+            const scientific = missingScientificNames[index];
+            return scientific && scientific !== common ? `${common} (${scientific})` : common;
+          });
+          
+          const displayNames = missingDisplayNames.slice(0, 3).join(', ');
+          const moreText = missingDisplayNames.length > 3 ? ` and ${missingDisplayNames.length - 3} more` : '';
+          
+          setError(`${missingCount} species lack ancestral data and will be excluded: ${displayNames}${moreText}. Generating tree with remaining species...`);
+          
+          // Set dropped species for highlighting
+          setDroppedSpecies(missingCommonNames);
+          
+          // Show countdown and simulate the previous timing experience
+          let timeLeft = 2;
           setCountdown(timeLeft);
-          if (timeLeft <= 0) {
-            clearInterval(countdownInterval);
-          }
-        }, 1000);
-        
-        setTimeout(async () => {
-          setCountdown(null);
-          setLoadingPhase('Generating tree with remaining species...');
-          try {
-            const retryData = await apiRequest('/api/dated-tree', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-              },
-              body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&allow_partial_response=true`
-            });
-            
-            if (retryData.success && (retryData.success === true || retryData.success[0] === true)) {
-              setTreeHTML(Array.isArray(retryData.html) ? retryData.html[0] : retryData.html);
-              setShowFloatingControls(true);
-              // Keep droppedSpecies state for highlighting - don't reset here
-              // Clear error message after shorter delay since it won't show in tree view
-              setTimeout(() => setError(null), 3000); // 3 seconds
-            } else {
-              const errorMessage = Array.isArray(retryData.error) ? retryData.error[0] : retryData.error;
-              throw new Error(errorMessage || 'Dated tree generation failed');
+          setLoadingPhase(`Continuing with available species...`);
+          
+          const countdownInterval = setInterval(() => {
+            timeLeft--;
+            setCountdown(timeLeft);
+            if (timeLeft <= 0) {
+              clearInterval(countdownInterval);
             }
-          } catch (retryError) {
-            throw new Error(`Failed to generate partial dated tree: ${retryError.message}`);
-          }
-        }, 2000); // 2 second delay to show the warning
+          }, 1000);
+          
+          setTimeout(() => {
+            setCountdown(null);
+            setLoadingPhase('Generating tree with remaining species...');
+            
+            // Display the tree HTML that was already generated in the single API response
+            setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
+            setShowFloatingControls(true);
+            // Keep droppedSpecies state for highlighting - don't reset here
+            // Clear error message after shorter delay since it won't show in tree view
+            setTimeout(() => setError(null), 3000); // 3 seconds
+          }, 2000); // 2 second delay to show the warning
+        } else {
+          // Complete coverage - all species have ancestral data
+          setLoadingPhase('Generating tree with ancestral ages...');
+          setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
+          setShowFloatingControls(true);
+          setDroppedSpecies([]); // Reset dropped species since all species have data
+        }
       } else if (data.coverage === 'none' || (Array.isArray(data.coverage) ? data.coverage[0] : data.coverage) === 'none' || (data.error && (Array.isArray(data.error) ? data.error[0] : data.error).includes('No chronogram data available'))) {
         // No species have ancestral data available
         throw new Error('None of the selected species have ancestral age data available. Please try different species or uncheck "Show ancestor ages" to generate a regular tree.');
