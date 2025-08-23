@@ -16,8 +16,6 @@ function App() {
   const [treeError, setTreeError] = useState(null); // For iframe area errors
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
-  const [showAncestorAges, setShowAncestorAges] = useState(false);
-  const [droppedSpecies, setDroppedSpecies] = useState([]);
   const iframeRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
@@ -64,31 +62,10 @@ function App() {
       console.log('Extracted common names:', commonNames);
       console.log('Extracted scientific names:', scientificNames);
       
-      if (showAncestorAges) {
-        await generateDatedTree(commonNames, scientificNames);
-      } else {
-        setLoadingPhase('Generating phylogenetic tree...');
-        await generateRegularTree(commonNames, scientificNames);
-      }
+      await generateUnifiedTree(commonNames, scientificNames);
     } catch (error) {
       console.error('Error generating tree:', error);
-      // Check if this is an ancestral age error that should be shown in iframe
-      if (showAncestorAges && (error.message.includes('ancestral age data') || error.message.includes('chronogram'))) {
-        // If none of the selected species have ancestral data, stay on splash screen
-        if (error.message.includes('None of the selected species have ancestral age data')) {
-          // Highlight all species in red since none have ancestral data
-          const allCommonNames = selectedSpecies.map(species => species.data.common);
-          setDroppedSpecies(allCommonNames);
-          setError(`Error generating tree: ${error.message}`);
-        } else {
-          // For partial coverage errors, progress to tree view with error display
-          setTreeError(error.message);
-          setTreeHTML(null); // Clear any existing tree
-          setShowFloatingControls(true); // Show floating controls so user can adjust settings
-        }
-      } else {
-        setError(`Error generating tree: ${error.message}`);
-      }
+      setError(`Error generating tree: ${error.message}`);
     } finally {
       setLoading(false);
       setLoadingPhase('');
@@ -96,102 +73,71 @@ function App() {
     }
   };
 
-  const generateRegularTree = async (commonNames, scientificNames) => {
-    const data = await apiRequest('/api/tree', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
-    });
-    if (data.success === true || data.success[0] === true) {
-      setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-      setShowFloatingControls(true);
-      setDroppedSpecies([]); // Reset dropped species for regular tree
-    } else {
-      const errorMessage = Array.isArray(data.error) ? data.error[0] : data.error;
-      throw new Error(errorMessage || 'Tree generation failed');
-    }
-  };
-
-  const generateDatedTree = async (commonNames, scientificNames) => {
-    // Single API call with allow_partial_response=true to get both missing species info and tree HTML
+  const generateUnifiedTree = async (commonNames, scientificNames) => {
     try {
-      setLoadingPhase('Checking ancestral data availability...');
-      console.log('Making dated tree request with species:', commonNames, scientificNames);
-      const data = await apiRequest('/api/dated-tree', {
+      // First, try to get the full tree with dates from the unified endpoint
+      setLoadingPhase('Generating phylogenetic tree with ancestral data...');
+      console.log('Making unified tree request with species:', commonNames, scientificNames);
+      
+      const data = await apiRequest('/api/full-tree-dated', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&allow_partial_response=true`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
       });
       
-      console.log('Dated tree API response:', data);
+      console.log('Full tree dated API response:', data);
       
-      if (data.success && (data.success === true || data.success[0] === true)) {
-        const coverage = Array.isArray(data.coverage) ? data.coverage[0] : data.coverage;
-        const missingCommonNames = data.missing_common_names || [];
-        const missingScientificNames = data.missing_scientific_names || [];
+      if (data.success === true || data.success[0] === true) {
+        // Success with the unified endpoint
+        setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
+        setShowFloatingControls(true);
         
-        if (coverage === 'partial' && missingCommonNames.length > 0) {
-          // Some species are missing ancestral data - show user feedback with same timing as before
+        // Optionally inform user if some species lack ancestral data but are still included
+        const missingCommonNames = data.missing_common_names || [];
+        if (missingCommonNames.length > 0) {
           const missingCount = missingCommonNames.length;
+          const displayNames = missingCommonNames.slice(0, 3).join(', ');
+          const moreText = missingCommonNames.length > 3 ? ` and ${missingCommonNames.length - 3} more` : '';
           
-          // Create display names (prefer scientific names where available)
-          const missingDisplayNames = missingCommonNames.map((common, index) => {
-            const scientific = missingScientificNames[index];
-            return scientific && scientific !== common ? `${common} (${scientific})` : common;
-          });
-          
-          const displayNames = missingDisplayNames.slice(0, 3).join(', ');
-          const moreText = missingDisplayNames.length > 3 ? ` and ${missingDisplayNames.length - 3} more` : '';
-          
-          setError(`${missingCount} species lack ancestral data and will be excluded: ${displayNames}${moreText}. Generating tree with remaining species...`);
-          
-          // Set dropped species for highlighting
-          setDroppedSpecies(missingCommonNames);
-          
-          // Show countdown and simulate the previous timing experience
-          let timeLeft = 2;
-          setCountdown(timeLeft);
-          setLoadingPhase(`Continuing with available species...`);
-          
-          const countdownInterval = setInterval(() => {
-            timeLeft--;
-            setCountdown(timeLeft);
-            if (timeLeft <= 0) {
-              clearInterval(countdownInterval);
-            }
-          }, 1000);
-          
-          setTimeout(() => {
-            setCountdown(null);
-            setLoadingPhase('Generating tree with remaining species...');
-            
-            // Display the tree HTML that was already generated in the single API response
-            setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-            setShowFloatingControls(true);
-            // Keep droppedSpecies state for highlighting - don't reset here
-            // Clear error message after shorter delay since it won't show in tree view
-            setTimeout(() => setError(null), 3000); // 3 seconds
-          }, 2000); // 2 second delay to show the warning
-        } else {
-          // Complete coverage - all species have ancestral data
-          setLoadingPhase('Generating tree with ancestral ages...');
-          setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-          setShowFloatingControls(true);
-          setDroppedSpecies([]); // Reset dropped species since all species have data
+          console.warn(`${missingCount} species lack ancestral age data: ${displayNames}${moreText}`);
+          // Show brief, non-blocking notification
+          setError(`Note: ${missingCount} species lack ancestral age data: ${displayNames}${moreText}`);
+          setTimeout(() => setError(null), 5000); // Clear after 5 seconds
         }
-      } else if (data.coverage === 'none' || (Array.isArray(data.coverage) ? data.coverage[0] : data.coverage) === 'none' || (data.error && (Array.isArray(data.error) ? data.error[0] : data.error).includes('No chronogram data available'))) {
-        // No species have ancestral data available
-        throw new Error('None of the selected species have ancestral age data available. Please try different species or uncheck "Show ancestor ages" to generate a regular tree.');
+        return;
       } else {
-        const errorMessage = Array.isArray(data.error) ? data.error[0] : data.error;
-        throw new Error(errorMessage || 'Dated tree generation failed');
+        throw new Error(Array.isArray(data.error) ? data.error[0] : data.error || 'Unified tree generation failed');
       }
     } catch (error) {
-      throw error;
+      // Fallback to regular tree if unified endpoint fails
+      console.warn('Unified tree generation failed, falling back to regular tree:', error.message);
+      setLoadingPhase('Ancestral age data unavailable. Generating phylogram...');
+      
+      try {
+        const fallbackData = await apiRequest('/api/tree', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
+        });
+        
+        if (fallbackData.success === true || fallbackData.success[0] === true) {
+          setTreeHTML(Array.isArray(fallbackData.html) ? fallbackData.html[0] : fallbackData.html);
+          setShowFloatingControls(true);
+          
+          // Notify user about fallback
+          setError('Ancestral age data unavailable. Showing phylogram without dates.');
+          setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+        } else {
+          const errorMessage = Array.isArray(fallbackData.error) ? fallbackData.error[0] : fallbackData.error;
+          throw new Error(errorMessage || 'Tree generation failed');
+        }
+      } catch (fallbackError) {
+        throw new Error(`Tree generation failed: ${fallbackError.message}`);
+      }
     }
   };
 
@@ -221,59 +167,15 @@ function App() {
         }));
         setSelectedSpecies(randomOptions);
         
-        // Respect the "Show ancestor ages" checkbox
-        if (showAncestorAges) {
-          // For dated tree, we need to call the dated tree API
-          // Handle dated tree errors separately from random species errors
-          try {
-            setLoadingPhase('Generating random tree with ancestral ages...');
-            await generateDatedTree(commonNames, scientificNames);
-          } catch (datedTreeError) {
-            // Re-throw with clearer context - this will be caught by the outer try-catch
-            // but the error handling in generateTree() will show the proper message
-            throw datedTreeError;
-          }
-        } else {
-          // For regular tree, we can use the HTML that was already generated
-          setLoadingPhase('Loading random tree...');
-          setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-          setShowFloatingControls(true);
-        }
+        // Use unified tree generation approach
+        setLoadingPhase('Generating random tree...');
+        await generateUnifiedTree(commonNames, scientificNames);
       } else {
         throw new Error('Failed to get random species');
       }
     } catch (error) {
       console.error('Error in random species function:', error);
-      // Provide more specific error message based on context
-      if (showAncestorAges && (error.message.includes('chronogram') || error.message.includes('ancestral age data'))) {
-        // If none of the selected species have ancestral data, stay on splash screen
-        if (error.message.includes('None of the selected species have ancestral age data')) {
-          // Highlight all species in red since none have ancestral data
-          const allCommonNames = selectedSpecies.map(species => species.data.common);
-          setDroppedSpecies(allCommonNames);
-          setError(`Error getting random species: ${error.message}`);
-        } else {
-          // For partial coverage errors, progress to tree view with error display
-          setTreeError(error.message);
-          setTreeHTML(null); // Clear any existing tree
-          setShowFloatingControls(true); // Show floating controls
-        }
-      } else if (showAncestorAges) {
-        // If none of the selected species have ancestral data, stay on splash screen
-        if (error.message.includes('None of the selected species have ancestral age data')) {
-          // Highlight all species in red since none have ancestral data
-          const allCommonNames = selectedSpecies.map(species => species.data.common);
-          setDroppedSpecies(allCommonNames);
-          setError(`Error getting random species: ${error.message}`);
-        } else {
-          // For other dated tree errors, progress to tree view with error display
-          setTreeError(`Error generating dated tree: ${error.message}`);
-          setTreeHTML(null);
-          setShowFloatingControls(true);
-        }
-      } else {
-        setError(`Error getting random species: ${error.message}`);
-      }
+      setError(`Error getting random species: ${error.message}`);
     } finally {
       setLoading(false);
       setLoadingPhase('');
@@ -307,36 +209,6 @@ function App() {
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
-  // Custom styles for react-select to highlight dropped species
-  const getCustomStyles = () => ({
-    multiValue: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        backgroundColor: isDropped ? '#fee' : provided.backgroundColor,
-        border: isDropped ? '1px solid #e74c3c' : provided.border,
-      };
-    },
-    multiValueLabel: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        color: isDropped ? '#e74c3c' : provided.color,
-        fontWeight: isDropped ? '600' : provided.fontWeight,
-      };
-    },
-    multiValueRemove: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        color: isDropped ? '#e74c3c' : provided.color,
-        ':hover': {
-          backgroundColor: isDropped ? '#e74c3c' : provided[':hover'].backgroundColor,
-          color: isDropped ? 'white' : provided[':hover'].color,
-        },
-      };
-    },
-  });
 
   const getTreeHeight = () => {
     if (!treeHTML) return '600px';
@@ -397,7 +269,6 @@ function App() {
                       : `No species found`
                   }
                   className="floating-species-select"
-                  styles={getCustomStyles()}
                 />
               </div>
               
@@ -411,25 +282,6 @@ function App() {
                 )}
               </div>
               
-              <div className="floating-options">
-                <label className="floating-checkbox-control">
-                  <input
-                    type="checkbox"
-                    checked={showAncestorAges}
-                    onChange={(e) => {
-                      setShowAncestorAges(e.target.checked);
-                      if (!e.target.checked) {
-                        setDroppedSpecies([]);
-                      }
-                      setTreeError(null); // Clear tree error when settings change
-                    }}
-                  />
-                  Show ancestor ages
-                </label>
-                {showAncestorAges && (
-                  <span className="floating-warning">Species without ancestral data will be dropped</span>
-                )}
-              </div>
               
               <div className="floating-action-buttons">
                 <button 
@@ -477,7 +329,6 @@ function App() {
                   : `No species found matching "${inputValue}"`
               }
               className="species-select"
-              styles={getCustomStyles()}
             />
             
             <div className="selection-info">
@@ -490,27 +341,6 @@ function App() {
               )}
             </div>
             
-            <div className="tree-options">
-              <label className="checkbox-control">
-                <input
-                  type="checkbox"
-                  checked={showAncestorAges}
-                  onChange={(e) => {
-                    setShowAncestorAges(e.target.checked);
-                    if (!e.target.checked) {
-                      setDroppedSpecies([]);
-                    }
-                    setTreeError(null); // Clear tree error when settings change
-                  }}
-                />
-                Show ancestor ages
-              </label>
-              {showAncestorAges && (
-                <p className="warning">
-                  Warning: Species ancestral data is incomplete. Any species without ancestral data will be dropped.
-                </p>
-              )}
-            </div>
           </div>
         )}
 
@@ -554,7 +384,7 @@ function App() {
 
         {showFloatingControls && (
           <div className="tree-display floating-mode">
-            {error && !error.includes('species lack ancestral data and will be excluded') && (
+            {error && (
               <div className="floating-error-message">
                 <p>{error}</p>
               </div>
