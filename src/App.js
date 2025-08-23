@@ -369,6 +369,9 @@ function App() {
             {error && (
               <div className="error-message">
                 <p>{error}</p>
+                <button onClick={() => setError(null)} className="dismiss-error-button" title="Dismiss">
+                  ×
+                </button>
               </div>
             )}
             <div style={{ position: 'relative', minHeight: '200px' }}>
@@ -387,6 +390,9 @@ function App() {
             {error && (
               <div className="floating-error-message">
                 <p>{error}</p>
+                <button onClick={() => setError(null)} className="dismiss-floating-error-button" title="Dismiss">
+                  ×
+                </button>
               </div>
             )}
             <div className="tree-container" style={{ position: 'relative' }}>
@@ -406,6 +412,7 @@ function App() {
                     setTreeError(null);
                     generateTree();
                   }}
+                  onDismiss={() => setTreeError(null)}
                   showRetryButton={true}
                 />
               ) : null}

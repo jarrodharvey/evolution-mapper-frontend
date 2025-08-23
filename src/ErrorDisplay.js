@@ -1,7 +1,7 @@
 import React from 'react';
 import './ErrorDisplay.css';
 
-const ErrorDisplay = ({ error, onRetry, showRetryButton = false }) => {
+const ErrorDisplay = ({ error, onRetry, showRetryButton = false, onDismiss }) => {
   return (
     <div className="error-display">
       <div className="error-content">
@@ -10,13 +10,18 @@ const ErrorDisplay = ({ error, onRetry, showRetryButton = false }) => {
           <h3>Tree Generation Error</h3>
           <p>{error}</p>
         </div>
-        {showRetryButton && (
-          <div className="error-actions">
+        <div className="error-actions">
+          {showRetryButton && (
             <button onClick={onRetry} className="retry-button">
               Try Again
             </button>
-          </div>
-        )}
+          )}
+          {onDismiss && (
+            <button onClick={onDismiss} className="dismiss-button" title="Dismiss">
+              ✕
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
