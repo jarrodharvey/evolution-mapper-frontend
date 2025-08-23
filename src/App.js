@@ -2,13 +2,18 @@ import React, { useState, useRef, useEffect } from 'react';
 import AsyncSelect from 'react-select/async';
 import { apiRequest } from './api-config';
 import Legend from './Legend';
+import ProgressOverlay from './ProgressOverlay';
+import ErrorDisplay from './ErrorDisplay';
 import './App.css';
 
 function App() {
   const [selectedSpecies, setSelectedSpecies] = useState([]);
   const [treeHTML, setTreeHTML] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState('');
+  const [countdown, setCountdown] = useState(null);
   const [error, setError] = useState(null);
+  const [treeError, setTreeError] = useState(null); // For iframe area errors
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [showAncestorAges, setShowAncestorAges] = useState(false);
@@ -44,7 +49,10 @@ function App() {
     }
 
     setLoading(true);
+    setLoadingPhase('Preparing tree generation...');
     setError(null);
+    setTreeError(null);
+    setCountdown(null);
 
     try {
       const commonNames = selectedSpecies.map(species => species.data.common);
@@ -59,13 +67,23 @@ function App() {
       if (showAncestorAges) {
         await generateDatedTree(commonNames, scientificNames);
       } else {
+        setLoadingPhase('Generating phylogenetic tree...');
         await generateRegularTree(commonNames, scientificNames);
       }
     } catch (error) {
       console.error('Error generating tree:', error);
-      setError(`Error generating tree: ${error.message}`);
+      // Check if this is an ancestral age error that should be shown in iframe
+      if (showAncestorAges && (error.message.includes('ancestral age data') || error.message.includes('chronogram'))) {
+        setTreeError(error.message);
+        setTreeHTML(null); // Clear any existing tree
+        setShowFloatingControls(true); // Show floating controls so user can adjust settings
+      } else {
+        setError(`Error generating tree: ${error.message}`);
+      }
     } finally {
       setLoading(false);
+      setLoadingPhase('');
+      setCountdown(null);
     }
   };
 
@@ -90,6 +108,7 @@ function App() {
   const generateDatedTree = async (commonNames, scientificNames) => {
     // First attempt with allow_partial_response=false to check for missing species
     try {
+      setLoadingPhase('Checking ancestral data availability...');
       console.log('Making dated tree request with species:', commonNames, scientificNames);
       const data = await apiRequest('/api/dated-tree', {
         method: 'POST',
@@ -103,6 +122,7 @@ function App() {
       
       if (data.success && (data.success === true || data.success[0] === true)) {
         // Success - all species have ancestral data
+        setLoadingPhase('Generating tree with ancestral ages...');
         setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
         setShowFloatingControls(true);
         setDroppedSpecies([]); // Reset dropped species since all species have data
@@ -126,8 +146,22 @@ function App() {
         // Set dropped species for highlighting
         setDroppedSpecies(missingCommonNames);
         
-        // Retry with allow_partial_response=true
+        // Show countdown and retry with allow_partial_response=true
+        let timeLeft = 2;
+        setCountdown(timeLeft);
+        setLoadingPhase(`Continuing with available species...`);
+        
+        const countdownInterval = setInterval(() => {
+          timeLeft--;
+          setCountdown(timeLeft);
+          if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+          }
+        }, 1000);
+        
         setTimeout(async () => {
+          setCountdown(null);
+          setLoadingPhase('Generating tree with remaining species...');
           try {
             const retryData = await apiRequest('/api/dated-tree', {
               method: 'POST',
@@ -165,7 +199,10 @@ function App() {
 
   const pickRandomSpecies = async () => {
     setLoading(true);
+    setLoadingPhase('Selecting random species...');
     setError(null);
+    setTreeError(null);
+    setCountdown(null);
 
     try {
       const count = Math.floor(Math.random() * 5) + 3; // Random between 3-7 species
@@ -191,6 +228,7 @@ function App() {
           // For dated tree, we need to call the dated tree API
           // Handle dated tree errors separately from random species errors
           try {
+            setLoadingPhase('Generating random tree with ancestral ages...');
             await generateDatedTree(commonNames, scientificNames);
           } catch (datedTreeError) {
             // Re-throw with clearer context - this will be caught by the outer try-catch
@@ -199,6 +237,7 @@ function App() {
           }
         } else {
           // For regular tree, we can use the HTML that was already generated
+          setLoadingPhase('Loading random tree...');
           setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
           setShowFloatingControls(true);
         }
@@ -208,15 +247,21 @@ function App() {
     } catch (error) {
       console.error('Error in random species function:', error);
       // Provide more specific error message based on context
-      if (showAncestorAges && error.message.includes('chronogram')) {
-        setError(`Ancestral age data: ${error.message}`);
+      if (showAncestorAges && (error.message.includes('chronogram') || error.message.includes('ancestral age data'))) {
+        setTreeError(error.message);
+        setTreeHTML(null); // Clear any existing tree
+        setShowFloatingControls(true); // Show floating controls
       } else if (showAncestorAges) {
-        setError(`Error generating dated tree: ${error.message}`);
+        setTreeError(`Error generating dated tree: ${error.message}`);
+        setTreeHTML(null);
+        setShowFloatingControls(true);
       } else {
         setError(`Error getting random species: ${error.message}`);
       }
     } finally {
       setLoading(false);
+      setLoadingPhase('');
+      setCountdown(null);
     }
   };
 
@@ -325,7 +370,10 @@ function App() {
                   defaultOptions={false}
                   loadOptions={loadSpecies}
                   value={selectedSpecies}
-                  onChange={setSelectedSpecies}
+                  onChange={(species) => {
+                    setSelectedSpecies(species);
+                    setTreeError(null); // Clear tree error when species change
+                  }}
                   placeholder="Search species..."
                   noOptionsMessage={({ inputValue }) => 
                     inputValue.length < 2 
@@ -357,6 +405,7 @@ function App() {
                       if (!e.target.checked) {
                         setDroppedSpecies([]);
                       }
+                      setTreeError(null); // Clear tree error when settings change
                     }}
                   />
                   Show ancestor ages
@@ -401,7 +450,10 @@ function App() {
               defaultOptions={false}
               loadOptions={loadSpecies}
               value={selectedSpecies}
-              onChange={setSelectedSpecies}
+              onChange={(species) => {
+                setSelectedSpecies(species);
+                setTreeError(null); // Clear tree error when species change
+              }}
               placeholder="Search for species (e.g., whale, human, dog)..."
               noOptionsMessage={({ inputValue }) => 
                 inputValue.length < 2 
@@ -432,6 +484,7 @@ function App() {
                     if (!e.target.checked) {
                       setDroppedSpecies([]);
                     }
+                    setTreeError(null); // Clear tree error when settings change
                   }}
                 />
                 Show ancestor ages
@@ -465,27 +518,56 @@ function App() {
           </div>
         )}
 
-        {!showFloatingControls && error && (
-          <div className="error-message">
-            <p>{error}</p>
-          </div>
+        {!showFloatingControls && (
+          <>
+            {error && (
+              <div className="error-message">
+                <p>{error}</p>
+              </div>
+            )}
+            <div style={{ position: 'relative', minHeight: '200px' }}>
+              <ProgressOverlay 
+                show={loading && !treeHTML}
+                message={loadingPhase}
+                showProgressBar={loadingPhase.includes('Generating')}
+                countdown={countdown}
+              />
+            </div>
+          </>
         )}
 
-        {treeHTML && showFloatingControls && (
+        {showFloatingControls && (
           <div className="tree-display floating-mode">
             {error && !error.includes('species lack ancestral data and will be excluded') && (
               <div className="floating-error-message">
                 <p>{error}</p>
               </div>
             )}
-            <div className="tree-container">
-              <iframe
-                ref={iframeRef}
-                width="100%"
-                height={getTreeHeight()}
-                frameBorder="0"
-                title="Phylogenetic Tree"
-                className="tree-iframe"
+            <div className="tree-container" style={{ position: 'relative' }}>
+              {treeHTML ? (
+                <iframe
+                  ref={iframeRef}
+                  width="100%"
+                  height={getTreeHeight()}
+                  frameBorder="0"
+                  title="Phylogenetic Tree"
+                  className="tree-iframe"
+                />
+              ) : treeError ? (
+                <ErrorDisplay 
+                  error={treeError} 
+                  onRetry={() => {
+                    setTreeError(null);
+                    generateTree();
+                  }}
+                  showRetryButton={true}
+                />
+              ) : null}
+              <ProgressOverlay 
+                show={loading}
+                message={loadingPhase}
+                showProgressBar={loadingPhase.includes('Generating')}
+                countdown={countdown}
               />
               <Legend />
             </div>
