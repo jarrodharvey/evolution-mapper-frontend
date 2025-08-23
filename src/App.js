@@ -74,9 +74,18 @@ function App() {
       console.error('Error generating tree:', error);
       // Check if this is an ancestral age error that should be shown in iframe
       if (showAncestorAges && (error.message.includes('ancestral age data') || error.message.includes('chronogram'))) {
-        setTreeError(error.message);
-        setTreeHTML(null); // Clear any existing tree
-        setShowFloatingControls(true); // Show floating controls so user can adjust settings
+        // If none of the selected species have ancestral data, stay on splash screen
+        if (error.message.includes('None of the selected species have ancestral age data')) {
+          // Highlight all species in red since none have ancestral data
+          const allCommonNames = selectedSpecies.map(species => species.data.common);
+          setDroppedSpecies(allCommonNames);
+          setError(`Error generating tree: ${error.message}`);
+        } else {
+          // For partial coverage errors, progress to tree view with error display
+          setTreeError(error.message);
+          setTreeHTML(null); // Clear any existing tree
+          setShowFloatingControls(true); // Show floating controls so user can adjust settings
+        }
       } else {
         setError(`Error generating tree: ${error.message}`);
       }
@@ -237,13 +246,31 @@ function App() {
       console.error('Error in random species function:', error);
       // Provide more specific error message based on context
       if (showAncestorAges && (error.message.includes('chronogram') || error.message.includes('ancestral age data'))) {
-        setTreeError(error.message);
-        setTreeHTML(null); // Clear any existing tree
-        setShowFloatingControls(true); // Show floating controls
+        // If none of the selected species have ancestral data, stay on splash screen
+        if (error.message.includes('None of the selected species have ancestral age data')) {
+          // Highlight all species in red since none have ancestral data
+          const allCommonNames = selectedSpecies.map(species => species.data.common);
+          setDroppedSpecies(allCommonNames);
+          setError(`Error getting random species: ${error.message}`);
+        } else {
+          // For partial coverage errors, progress to tree view with error display
+          setTreeError(error.message);
+          setTreeHTML(null); // Clear any existing tree
+          setShowFloatingControls(true); // Show floating controls
+        }
       } else if (showAncestorAges) {
-        setTreeError(`Error generating dated tree: ${error.message}`);
-        setTreeHTML(null);
-        setShowFloatingControls(true);
+        // If none of the selected species have ancestral data, stay on splash screen
+        if (error.message.includes('None of the selected species have ancestral age data')) {
+          // Highlight all species in red since none have ancestral data
+          const allCommonNames = selectedSpecies.map(species => species.data.common);
+          setDroppedSpecies(allCommonNames);
+          setError(`Error getting random species: ${error.message}`);
+        } else {
+          // For other dated tree errors, progress to tree view with error display
+          setTreeError(`Error generating dated tree: ${error.message}`);
+          setTreeHTML(null);
+          setShowFloatingControls(true);
+        }
       } else {
         setError(`Error getting random species: ${error.message}`);
       }
