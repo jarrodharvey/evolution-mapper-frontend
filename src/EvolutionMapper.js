@@ -15,6 +15,7 @@ function EvolutionMapper() {
   const [treeError, setTreeError] = useState(null); // For iframe area errors
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
+  const [droppedSpecies, setDroppedSpecies] = useState([]);
   const iframeRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
@@ -93,8 +94,10 @@ function EvolutionMapper() {
         setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
         setShowFloatingControls(true);
         
-        // Optionally inform user if some species lack ancestral data but are still included
+        // Track and highlight species that lack ancestral data
         const missingCommonNames = data.missing_common_names || [];
+        setDroppedSpecies(missingCommonNames); // Set dropped species for highlighting
+        
         if (missingCommonNames.length > 0) {
           const missingCount = missingCommonNames.length;
           const displayNames = missingCommonNames.slice(0, 3).join(', ');
@@ -104,39 +107,16 @@ function EvolutionMapper() {
           // Show brief, non-blocking notification
           setError(`Note: ${missingCount} species lack ancestral age data: ${displayNames}${moreText}`);
           setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+        } else {
+          // Reset dropped species when all have data
+          setDroppedSpecies([]);
         }
         return;
       } else {
         throw new Error(Array.isArray(data.error) ? data.error[0] : data.error || 'Unified tree generation failed');
       }
     } catch (error) {
-      // Fallback to regular tree if unified endpoint fails
-      console.warn('Unified tree generation failed, falling back to regular tree:', error.message);
-      setLoadingPhase('Ancestral age data unavailable. Generating phylogram...');
-      
-      try {
-        const fallbackData = await apiRequest('/api/tree', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
-        });
-        
-        if (fallbackData.success === true || fallbackData.success[0] === true) {
-          setTreeHTML(Array.isArray(fallbackData.html) ? fallbackData.html[0] : fallbackData.html);
-          setShowFloatingControls(true);
-          
-          // Notify user about fallback
-          setError('Ancestral age data unavailable. Showing phylogram without dates.');
-          setTimeout(() => setError(null), 5000); // Clear after 5 seconds
-        } else {
-          const errorMessage = Array.isArray(fallbackData.error) ? fallbackData.error[0] : fallbackData.error;
-          throw new Error(errorMessage || 'Tree generation failed');
-        }
-      } catch (fallbackError) {
-        throw new Error(`Tree generation failed: ${fallbackError.message}`);
-      }
+      throw new Error(`Tree generation failed: ${error.message}`);
     }
   };
 
@@ -208,6 +188,36 @@ function EvolutionMapper() {
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
+  // Custom styles for react-select to highlight dropped species
+  const getCustomStyles = () => ({
+    multiValue: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        backgroundColor: isDropped ? '#fee' : provided.backgroundColor,
+        border: isDropped ? '1px solid #e74c3c' : provided.border,
+      };
+    },
+    multiValueLabel: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        color: isDropped ? '#e74c3c' : provided.color,
+        fontWeight: isDropped ? '600' : provided.fontWeight,
+      };
+    },
+    multiValueRemove: (provided, state) => {
+      const isDropped = droppedSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        color: isDropped ? '#e74c3c' : provided.color,
+        ':hover': {
+          backgroundColor: isDropped ? '#e74c3c' : provided[':hover'].backgroundColor,
+          color: isDropped ? 'white' : provided[':hover'].color,
+        },
+      };
+    },
+  });
 
   const getTreeHeight = () => {
     if (!treeHTML) return '600px';
@@ -268,6 +278,7 @@ function EvolutionMapper() {
                       : `No species found`
                   }
                   className="floating-species-select"
+                  styles={getCustomStyles()}
                 />
               </div>
               
@@ -328,6 +339,7 @@ function EvolutionMapper() {
                   : `No species found matching "${inputValue}"`
               }
               className="species-select"
+              styles={getCustomStyles()}
             />
             
             <div className="selection-info">
