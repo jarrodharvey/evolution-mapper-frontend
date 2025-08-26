@@ -1,4 +1,8 @@
 .App {
+  min-height: 100vh;
+}
+
+.evolution-mapper-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -43,7 +47,7 @@
   flex-direction: column;
 }
 
-.App.floating-mode {
+.evolution-mapper-container.floating-mode {
   max-width: none;
   margin: 0;
   padding: 0;

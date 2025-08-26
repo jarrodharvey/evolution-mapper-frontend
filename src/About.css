@@ -1,0 +1,209 @@
+.about-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+}
+
+.about-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.about-header {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.about-header h1 {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  font-weight: 300;
+}
+
+.about-description {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.developer-section,
+.repository-section,
+.citations-section {
+  padding: 2rem;
+  border-bottom: 1px solid #eee;
+}
+
+.citations-section {
+  border-bottom: none;
+}
+
+.developer-section h2,
+.repository-section h2,
+.citations-section h2 {
+  color: #333;
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-weight: 400;
+}
+
+.developer-info h3 {
+  color: #4CAF50;
+  font-size: 1.3rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.developer-info p {
+  color: #666;
+  line-height: 1.6;
+  font-size: 1.1rem;
+}
+
+.repositories {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.repo-link {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.repo-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.repo-link h3 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.repo-url {
+  color: #4CAF50;
+  text-decoration: none;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9rem;
+  word-break: break-all;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.repo-url:hover {
+  text-decoration: underline;
+}
+
+.repo-link p {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.citations-intro {
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 4px solid #4CAF50;
+}
+
+.citations-loading,
+.citations-error {
+  text-align: center;
+  padding: 2rem;
+}
+
+.citations-loading p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.citations-error p {
+  color: #dc3545;
+  font-size: 1.1rem;
+}
+
+.citations-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.citation-item {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.citation-packages {
+  color: #4CAF50;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.citation-details {
+  color: #444;
+}
+
+.citation-entry {
+  margin-bottom: 1rem;
+}
+
+.citation-entry:last-child {
+  margin-bottom: 0;
+}
+
+.citation-text {
+  line-height: 1.5;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.citation-text:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+  .about-container {
+    padding: 1rem;
+  }
+  
+  .about-header {
+    padding: 2rem 1.5rem;
+  }
+  
+  .about-header h1 {
+    font-size: 2rem;
+  }
+  
+  .about-description {
+    font-size: 1.1rem;
+  }
+  
+  .developer-section,
+  .repository-section,
+  .citations-section {
+    padding: 1.5rem;
+  }
+  
+  .repo-url {
+    font-size: 0.8rem;
+  }
+}
