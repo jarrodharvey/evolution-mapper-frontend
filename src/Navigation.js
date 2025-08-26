@@ -2,8 +2,12 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './Navigation.css';
 
-function Navigation() {
+function Navigation({ hideInTreeView = false }) {
   const location = useLocation();
+  
+  if (hideInTreeView) {
+    return null;
+  }
   
   return (
     <nav className="navigation">

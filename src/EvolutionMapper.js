@@ -5,7 +5,7 @@ import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
 import ErrorDisplay from './ErrorDisplay';
 
-function EvolutionMapper() {
+function EvolutionMapper({ onTreeViewChange }) {
   const [selectedSpecies, setSelectedSpecies] = useState([]);
   const [treeHTML, setTreeHTML] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -161,6 +161,12 @@ function EvolutionMapper() {
       setCountdown(null);
     }
   };
+
+  useEffect(() => {
+    if (onTreeViewChange) {
+      onTreeViewChange(showFloatingControls);
+    }
+  }, [showFloatingControls, onTreeViewChange]);
 
   useEffect(() => {
     if (treeHTML && iframeRef.current) {
