@@ -129,7 +129,7 @@ function EvolutionMapper({ onTreeViewChange }) {
 
     try {
       const count = Math.floor(Math.random() * 5) + 3; // Random between 3-7 species
-      const data = await apiRequest(`/api/random-tree?count=${count}`);
+      const data = await apiRequest(`/api/random-species?count=${count}`);
       
       if ((data.success === true || data.success[0] === true) && data.selected_species) {
         // Handle new API structure with common_names and scientific_names arrays
