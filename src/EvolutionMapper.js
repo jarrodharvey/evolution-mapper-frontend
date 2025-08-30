@@ -26,7 +26,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       
       return data.species.map(species => ({
         value: species.common,
-        label: `${species.common} (${species.scientific})`,
+        label: `${species.common} (${species.scientific})${species.has_datelife ? ' 🕒' : ''}`,
         data: species
       }));
     } catch (error) {
@@ -135,13 +135,15 @@ function EvolutionMapper({ onTreeViewChange }) {
         // Handle new API structure with common_names and scientific_names arrays
         const commonNames = data.selected_species.common_names || data.selected_species;
         const scientificNames = data.selected_species.scientific_names || [];
+        const hasDatelife = data.selected_species.has_datelife || [];
         
         const randomOptions = commonNames.map((common, index) => ({
           value: common,
-          label: scientificNames[index] ? `${common} (${scientificNames[index]})` : common,
+          label: `${common}${scientificNames[index] ? ` (${scientificNames[index]})` : ''}${hasDatelife[index] ? ' 🕒' : ''}`,
           data: { 
             common: common,
-            scientific: scientificNames[index] || common
+            scientific: scientificNames[index] || common,
+            has_datelife: hasDatelife[index]
           }
         }));
         setSelectedSpecies(randomOptions);
@@ -296,6 +298,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 {selectedSpecies.length > 20 && (
                   <span className="floating-warning">Max 20 species</span>
                 )}
+                <span className="floating-clock-explanation">🕒 = ancestral age data available</span>
               </div>
               
               
@@ -356,6 +359,7 @@ function EvolutionMapper({ onTreeViewChange }) {
               {selectedSpecies.length > 20 && (
                 <p className="warning">Please select no more than 20 species</p>
               )}
+              <p className="clock-explanation">🕒 indicates species with ancestral age data available</p>
             </div>
             
           </div>
