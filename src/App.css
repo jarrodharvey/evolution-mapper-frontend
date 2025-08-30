@@ -27,6 +27,13 @@
   margin: 0;
 }
 
+.App-header .data-explanation {
+  font-size: 0.9rem;
+  color: #95a5a6;
+  font-style: italic;
+  margin-top: 8px;
+}
+
 .App-main {
   background: white;
   border-radius: 8px;
@@ -53,6 +60,11 @@
   padding: 0;
   height: 100vh;
   overflow: hidden;
+}
+
+/* Hide navigation when in tree view (floating mode) */
+.App.tree-view .navigation {
+  display: none;
 }
 
 .species-selector {

@@ -103,9 +103,9 @@ function EvolutionMapper({ onTreeViewChange }) {
           const displayNames = missingCommonNames.slice(0, 3).join(', ');
           const moreText = missingCommonNames.length > 3 ? ` and ${missingCommonNames.length - 3} more` : '';
           
-          console.warn(`${missingCount} species lack ancestral age data: ${displayNames}${moreText}`);
+          console.warn(`Age data not available for ${missingCount} species in this combination: ${displayNames}${moreText}`);
           // Show brief, non-blocking notification
-          setError(`Note: ${missingCount} species lack ancestral age data: ${displayNames}${moreText}`);
+          setError(`Note: Age data not available for ${missingCount} species in this combination: ${displayNames}${moreText}`);
           setTimeout(() => setError(null), 5000); // Clear after 5 seconds
         } else {
           // Reset dropped species when all have data
@@ -245,6 +245,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         <header className="App-header">
           <h1>Evolution Mapper</h1>
           <p>Select 3-20 species to see how they evolved!</p>
+          <p className="data-explanation">🕒 shows species in our age database - but age data for specific combinations may vary</p>
         </header>
       )}
       
@@ -298,7 +299,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 {selectedSpecies.length > 20 && (
                   <span className="floating-warning">Max 20 species</span>
                 )}
-                <span className="floating-clock-explanation">🕒 = ancestral age data available</span>
+                <span className="floating-clock-explanation">🕒 = species in age database</span>
               </div>
               
               
@@ -359,7 +360,7 @@ function EvolutionMapper({ onTreeViewChange }) {
               {selectedSpecies.length > 20 && (
                 <p className="warning">Please select no more than 20 species</p>
               )}
-              <p className="clock-explanation">🕒 indicates species with ancestral age data available</p>
+              <p className="clock-explanation">🕒 indicates species in our age database (specific combinations may vary)</p>
             </div>
             
           </div>
