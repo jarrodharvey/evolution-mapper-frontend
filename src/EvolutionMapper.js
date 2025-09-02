@@ -3,6 +3,7 @@ import AsyncSelect from 'react-select/async';
 import { apiRequest } from './api-config';
 import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
+import ProgressChecklist from './ProgressChecklist';
 import ErrorDisplay from './ErrorDisplay';
 
 function EvolutionMapper({ onTreeViewChange }) {
@@ -16,7 +17,10 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [droppedSpecies, setDroppedSpecies] = useState([]);
+  const [progressData, setProgressData] = useState(null);
+  const [showProgressChecklist, setShowProgressChecklist] = useState(false);
   const iframeRef = useRef(null);
+  const progressIntervalRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
     if (!inputValue || inputValue.length < 2) return [];
@@ -73,8 +77,68 @@ function EvolutionMapper({ onTreeViewChange }) {
     }
   };
 
+  const fetchProgressToken = async () => {
+    try {
+      console.log('🔄 Fetching progress token...');
+      const response = await apiRequest('/api/get_progress_token');
+      console.log('📥 Progress token response:', response);
+      if (response.success && response.token) {
+        console.log('✅ Got progress token:', response.token);
+        return response.token;
+      }
+      throw new Error('Failed to get progress token');
+    } catch (error) {
+      console.error('❌ Error fetching progress token:', error);
+      throw error;
+    }
+  };
+
+  const startProgressMonitoring = (token) => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+    
+    const pollProgress = async () => {
+      try {
+        const response = await apiRequest(`/api/progress?progress_token=${token}`);
+        setProgressData(response);
+        
+        // Stop polling if request is completed
+        if (response.status === 'completed' || response.status === 'error') {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      } catch (error) {
+        console.error('Error polling progress:', error);
+        // Continue polling on error - it might be a temporary issue
+      }
+    };
+    
+    // Start polling immediately and then every 2 seconds
+    pollProgress();
+    progressIntervalRef.current = setInterval(pollProgress, 2000);
+  };
+
+  const stopProgressMonitoring = () => {
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = null;
+    }
+  };
+
   const generateUnifiedTree = async (commonNames, scientificNames) => {
     try {
+      console.log('🌳 Starting generateUnifiedTree with progress monitoring');
+      // Get progress token first
+      setLoadingPhase('Preparing tree generation...');
+      const token = await fetchProgressToken();
+      console.log('📋 Setting progress checklist enabled');
+      setShowProgressChecklist(true);
+      
+      // Start monitoring progress
+      console.log('👁️ Starting progress monitoring');
+      startProgressMonitoring(token);
+      
       // First, try to get the full tree with dates from the unified endpoint
       setLoadingPhase('Generating phylogenetic tree with ancestral data...');
       console.log('Making unified tree request with species:', commonNames, scientificNames);
@@ -84,7 +148,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}`
       });
       
       console.log('Full tree dated API response:', data);
@@ -116,7 +180,15 @@ function EvolutionMapper({ onTreeViewChange }) {
         throw new Error(Array.isArray(data.error) ? data.error[0] : data.error || 'Unified tree generation failed');
       }
     } catch (error) {
+      stopProgressMonitoring();
       throw new Error(`Tree generation failed: ${error.message}`);
+    } finally {
+      // Stop progress monitoring after a short delay to show completion
+      setTimeout(() => {
+        setShowProgressChecklist(false);
+        setProgressData(null);
+        stopProgressMonitoring();
+      }, 3000);
     }
   };
 
@@ -163,6 +235,13 @@ function EvolutionMapper({ onTreeViewChange }) {
       setCountdown(null);
     }
   };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      stopProgressMonitoring();
+    };
+  }, []);
 
   useEffect(() => {
     if (onTreeViewChange) {
@@ -396,14 +475,22 @@ function EvolutionMapper({ onTreeViewChange }) {
                 </button>
               </div>
             )}
-            <div style={{ position: 'relative', minHeight: '200px' }}>
-              <ProgressOverlay 
-                show={loading && !treeHTML}
-                message={loadingPhase}
-                showProgressBar={loadingPhase.includes('Generating')}
-                countdown={countdown}
+            
+            {showProgressChecklist && progressData ? (
+              <ProgressChecklist 
+                show={showProgressChecklist}
+                progressData={progressData}
               />
-            </div>
+            ) : loading && !treeHTML ? (
+              <div style={{ position: 'relative', minHeight: '200px' }}>
+                <ProgressOverlay 
+                  show={loading && !treeHTML}
+                  message={loadingPhase}
+                  showProgressBar={loadingPhase.includes('Generating')}
+                  countdown={countdown}
+                />
+              </div>
+            ) : null}
           </>
         )}
 
@@ -438,12 +525,19 @@ function EvolutionMapper({ onTreeViewChange }) {
                   showRetryButton={true}
                 />
               ) : null}
-              <ProgressOverlay 
-                show={loading}
-                message={loadingPhase}
-                showProgressBar={loadingPhase.includes('Generating')}
-                countdown={countdown}
-              />
+              {showProgressChecklist && progressData ? (
+                <ProgressChecklist 
+                  show={showProgressChecklist}
+                  progressData={progressData}
+                />
+              ) : (
+                <ProgressOverlay 
+                  show={loading}
+                  message={loadingPhase}
+                  showProgressBar={loadingPhase.includes('Generating')}
+                  countdown={countdown}
+                />
+              )}
               <Legend />
             </div>
           </div>
