@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import AsyncSelect from 'react-select/async';
+import { components } from 'react-select';
 import { apiRequest } from './api-config';
 import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
@@ -168,9 +169,6 @@ function EvolutionMapper({ onTreeViewChange }) {
           const moreText = missingCommonNames.length > 3 ? ` and ${missingCommonNames.length - 3} more` : '';
           
           console.warn(`Age data not available for ${missingCount} species in this combination: ${displayNames}${moreText}`);
-          // Show brief, non-blocking notification
-          setError(`Note: Age data not available for ${missingCount} species in this combination: ${displayNames}${moreText}`);
-          setTimeout(() => setError(null), 5000); // Clear after 5 seconds
         } else {
           // Reset dropped species when all have data
           setDroppedSpecies([]);
@@ -275,35 +273,101 @@ function EvolutionMapper({ onTreeViewChange }) {
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
-  // Custom styles for react-select to highlight dropped species
+  // Custom component for multi-value labels with dynamic clock formatting
+  const MultiValueLabel = (props) => {
+    const { data } = props;
+    const isDropped = droppedSpecies.includes(data.data.common);
+    const hasDatelife = data.data.has_datelife;
+    
+    // Parse the original label to extract text and clock
+    const originalLabel = data.label;
+    const hasClockInLabel = originalLabel.includes('🕒');
+    
+    // Only show red X if the species originally had has_datelife: true AND is dropped
+    const shouldShowRedX = isDropped && hasDatelife;
+    
+    if (hasClockInLabel) {
+      // Split the label to separate text from clock
+      const labelWithoutClock = originalLabel.replace(' 🕒', '');
+      
+      return (
+        <components.MultiValueLabel {...props}>
+          {labelWithoutClock}
+          <span style={{ position: 'relative', display: 'inline-block' }}>
+            {' 🕒'}
+            {shouldShowRedX && (
+              <span style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#e74c3c',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                textShadow: '0 0 2px white',
+                pointerEvents: 'none'
+              }}>
+                ✗
+              </span>
+            )}
+          </span>
+        </components.MultiValueLabel>
+      );
+    }
+    
+    // For species without clocks in label, check if they should have had one
+    if (shouldShowRedX) {
+      return (
+        <components.MultiValueLabel {...props}>
+          {originalLabel}
+          <span style={{ position: 'relative', display: 'inline-block' }}>
+            {' 🕒'}
+            <span style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              color: '#e74c3c',
+              fontWeight: 'bold',
+              fontSize: '14px',
+              textShadow: '0 0 2px white',
+              pointerEvents: 'none'
+            }}>
+              ✗
+            </span>
+          </span>
+        </components.MultiValueLabel>
+      );
+    }
+    
+    // If no clock and not dropped, just return the default component
+    return <components.MultiValueLabel {...props} />;
+  };
+
+  // Custom styles for react-select to prevent clock symbol truncation
   const getCustomStyles = () => ({
-    multiValue: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        backgroundColor: isDropped ? '#fee' : provided.backgroundColor,
-        border: isDropped ? '1px solid #e74c3c' : provided.border,
-      };
-    },
-    multiValueLabel: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        color: isDropped ? '#e74c3c' : provided.color,
-        fontWeight: isDropped ? '600' : provided.fontWeight,
-      };
-    },
-    multiValueRemove: (provided, state) => {
-      const isDropped = droppedSpecies.includes(state.data.data.common);
-      return {
-        ...provided,
-        color: isDropped ? '#e74c3c' : provided.color,
-        ':hover': {
-          backgroundColor: isDropped ? '#e74c3c' : provided[':hover'].backgroundColor,
-          color: isDropped ? 'white' : provided[':hover'].color,
-        },
-      };
-    },
+    multiValue: (provided) => ({
+      ...provided,
+      maxWidth: 'none', // Remove max-width constraints
+      minWidth: 'fit-content', // Ensure it fits content including clock
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      whiteSpace: 'nowrap', // Prevent text wrapping
+      overflow: 'visible', // Show content that would be hidden
+      textOverflow: 'clip', // Don't add ellipsis
+      maxWidth: 'none', // Remove max-width constraints
+      minWidth: 'fit-content', // Ensure it fits the full content
+    }),
+    control: (provided) => ({
+      ...provided,
+      minHeight: 'auto', // Allow control to expand as needed
+    }),
+    valueContainer: (provided) => ({
+      ...provided,
+      flexWrap: 'wrap', // Allow multi-values to wrap to new lines
+      overflow: 'visible', // Don't hide overflowing content
+    }),
   });
 
   const getTreeHeight = () => {
@@ -358,6 +422,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   onChange={(species) => {
                     setSelectedSpecies(species);
                     setTreeError(null); // Clear tree error when species change
+                    setDroppedSpecies([]); // Clear dropped species since combination changed
                   }}
                   placeholder="Search species..."
                   noOptionsMessage={({ inputValue }) => 
@@ -367,6 +432,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   }
                   className="floating-species-select"
                   styles={getCustomStyles()}
+                  components={{ MultiValueLabel }}
                 />
               </div>
               
@@ -379,6 +445,24 @@ function EvolutionMapper({ onTreeViewChange }) {
                   <span className="floating-warning">Max 20 species</span>
                 )}
                 <span className="floating-clock-explanation">🕒 = species in age database</span>
+                <span className="floating-crossed-clock-explanation">
+                  <span style={{ position: 'relative', display: 'inline-block' }}>
+                    🕒
+                    <span style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      color: '#e74c3c',
+                      fontWeight: 'bold',
+                      fontSize: '12px',
+                      textShadow: '0 0 2px white'
+                    }}>
+                      ✗
+                    </span>
+                  </span>
+                  {' = age data unavailable for this combination'}
+                </span>
               </div>
               
               
@@ -420,6 +504,7 @@ function EvolutionMapper({ onTreeViewChange }) {
               onChange={(species) => {
                 setSelectedSpecies(species);
                 setTreeError(null); // Clear tree error when species change
+                setDroppedSpecies([]); // Clear dropped species since combination changed
               }}
               placeholder="Search for species (e.g., whale, human, dog)..."
               noOptionsMessage={({ inputValue }) => 
@@ -429,6 +514,7 @@ function EvolutionMapper({ onTreeViewChange }) {
               }
               className="species-select"
               styles={getCustomStyles()}
+              components={{ MultiValueLabel }}
             />
             
             <div className="selection-info">
@@ -439,7 +525,6 @@ function EvolutionMapper({ onTreeViewChange }) {
               {selectedSpecies.length > 20 && (
                 <p className="warning">Please select no more than 20 species</p>
               )}
-              <p className="clock-explanation">🕒 indicates species in our age database (specific combinations may vary)</p>
             </div>
             
           </div>
@@ -475,6 +560,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 </button>
               </div>
             )}
+
             
             {showProgressChecklist && progressData ? (
               <ProgressChecklist 
@@ -504,6 +590,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 </button>
               </div>
             )}
+
             <div className="tree-container" style={{ position: 'relative' }}>
               {treeHTML ? (
                 <iframe
@@ -525,7 +612,14 @@ function EvolutionMapper({ onTreeViewChange }) {
                   showRetryButton={true}
                 />
               ) : null}
-              {showProgressChecklist && progressData ? (
+              {showProgressChecklist && progressData && showFloatingControls ? (
+                <div style={{ marginTop: '80px' }}>
+                  <ProgressChecklist 
+                    show={showProgressChecklist}
+                    progressData={progressData}
+                  />
+                </div>
+              ) : showProgressChecklist && progressData ? (
                 <ProgressChecklist 
                   show={showProgressChecklist}
                   progressData={progressData}
