@@ -241,6 +241,34 @@ function EvolutionMapper({ onTreeViewChange }) {
     };
   }, []);
 
+  // Add global console command for copying selected species
+  useEffect(() => {
+    window.cs = () => {
+      if (selectedSpecies.length === 0) {
+        console.log('No species selected');
+        return;
+      }
+      
+      const formattedSpecies = selectedSpecies.map(species => {
+        const common = species.data.common;
+        const scientific = species.data.scientific;
+        return `${common} (${scientific})`;
+      }).join(', ');
+      
+      navigator.clipboard.writeText(formattedSpecies).then(() => {
+        console.log('Copied to clipboard:', formattedSpecies);
+      }).catch(err => {
+        console.error('Failed to copy to clipboard:', err);
+        console.log('Selected species:', formattedSpecies);
+      });
+    };
+    
+    // Cleanup function to remove global command
+    return () => {
+      delete window.cs;
+    };
+  }, [selectedSpecies]);
+
   useEffect(() => {
     if (onTreeViewChange) {
       onTreeViewChange(showFloatingControls);
