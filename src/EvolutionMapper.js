@@ -241,7 +241,7 @@ function EvolutionMapper({ onTreeViewChange }) {
     };
   }, []);
 
-  // Add global console command for copying selected species
+  // Add global console commands for copying and adding species
   useEffect(() => {
     window.cs = () => {
       if (selectedSpecies.length === 0) {
@@ -262,12 +262,95 @@ function EvolutionMapper({ onTreeViewChange }) {
         console.log('Selected species:', formattedSpecies);
       });
     };
+
+    window.as = async (speciesString) => {
+      if (!speciesString) {
+        console.log('Usage: as("Species 1 (Scientific name 1), Species 2 (Scientific name 2), ...")');
+        return;
+      }
+      
+      console.log('Adding species:', speciesString);
+      
+      // Split by comma and extract scientific names from parentheses
+      const speciesEntries = speciesString.split(',').map(s => s.trim());
+      const scientificNames = [];
+      
+      speciesEntries.forEach(entry => {
+        const match = entry.match(/\(([^)]+)\)/);
+        if (match) {
+          scientificNames.push(match[1].trim());
+        } else {
+          console.warn(`No scientific name found in parentheses for: ${entry}`);
+        }
+      });
+      
+      if (scientificNames.length === 0) {
+        console.error('No scientific names found in parentheses');
+        return;
+      }
+      
+      console.log('Extracted scientific names:', scientificNames);
+      
+      // Search for each species and add them to the selection
+      const newSpecies = [];
+      const notFound = [];
+      
+      for (const scientificName of scientificNames) {
+        try {
+          console.log(`Searching for: ${scientificName}`);
+          const searchResults = await loadSpecies(scientificName);
+          
+          // Find exact match by scientific name
+          const exactMatch = searchResults.find(result => 
+            result.data.scientific && result.data.scientific.toLowerCase() === scientificName.toLowerCase()
+          );
+          
+          if (exactMatch) {
+            newSpecies.push(exactMatch);
+            console.log(`Found: ${exactMatch.label}`);
+          } else if (searchResults.length > 0) {
+            // If no exact match, take the first result
+            newSpecies.push(searchResults[0]);
+            console.log(`No exact match, using: ${searchResults[0].label}`);
+          } else {
+            notFound.push(scientificName);
+            console.warn(`Not found: ${scientificName}`);
+          }
+        } catch (error) {
+          console.error(`Error searching for ${scientificName}:`, error);
+          notFound.push(scientificName);
+        }
+      }
+      
+      if (newSpecies.length > 0) {
+        setSelectedSpecies(prevSelected => {
+          // Remove duplicates based on scientific name
+          const existingScientificNames = prevSelected.map(s => s.data.scientific?.toLowerCase());
+          const uniqueNewSpecies = newSpecies.filter(s => 
+            !existingScientificNames.includes(s.data.scientific?.toLowerCase())
+          );
+          
+          const combined = [...prevSelected, ...uniqueNewSpecies];
+          console.log(`Added ${uniqueNewSpecies.length} new species (${newSpecies.length - uniqueNewSpecies.length} duplicates skipped)`);
+          console.log(`Total selected: ${combined.length} species`);
+          
+          return combined;
+        });
+      }
+      
+      if (notFound.length > 0) {
+        console.warn(`Could not find ${notFound.length} species:`, notFound);
+      }
+      
+      console.log(`Successfully processed ${newSpecies.length} species`);
+    };
     
-    // Cleanup function to remove global command
+    // Cleanup function to remove global commands
     return () => {
       delete window.cs;
+      delete window.as;
     };
-  }, [selectedSpecies]);
+  }, [selectedSpecies, loadSpecies, setSelectedSpecies]);
 
   useEffect(() => {
     if (onTreeViewChange) {
