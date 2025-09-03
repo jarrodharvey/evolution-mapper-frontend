@@ -8,7 +8,6 @@ const ProgressChecklist = ({ show, progressData }) => {
     const stepNames = {
       request_started: 'Request Started',
       validating_input: 'Validating Input',
-      generating_hybrid_tree: 'Generating Hybrid Tree',
       database_lookup: 'Database Lookup',
       parallel_queries: 'ROTL and DateLife Queries',
       datelife_processing: 'Processing DateLife Age Data',
