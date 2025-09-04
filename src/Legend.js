@@ -18,7 +18,6 @@ const Legend = () => {
           throw new Error('Failed to fetch legend data');
         }
       } catch (error) {
-        console.error('Error fetching legend:', error);
         setError(error.message);
       } finally {
         setLoading(false);

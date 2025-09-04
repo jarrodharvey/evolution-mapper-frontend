@@ -35,7 +35,6 @@ function EvolutionMapper({ onTreeViewChange }) {
         data: species
       }));
     } catch (error) {
-      console.error('Error loading species:', error);
       setError(`Error searching species: ${error.message}`);
       return [];
     }
@@ -67,7 +66,7 @@ function EvolutionMapper({ onTreeViewChange }) {
           commonAncestorNode.dispatchEvent(clickEvent);
         }
       } catch (error) {
-        console.log('Could not collapse tree:', error);
+        // Silently handle tree collapse errors
       }
     }
 
@@ -83,13 +82,9 @@ function EvolutionMapper({ onTreeViewChange }) {
         species.data.scientific || species.data.common // Fallback to common name if scientific not available
       );
       
-      console.log('Selected species structure:', selectedSpecies);
-      console.log('Extracted common names:', commonNames);
-      console.log('Extracted scientific names:', scientificNames);
       
       await generateUnifiedTree(commonNames, scientificNames);
     } catch (error) {
-      console.error('Error generating tree:', error);
       setError(`Error generating tree: ${error.message}`);
     } finally {
       setLoading(false);
@@ -100,16 +95,12 @@ function EvolutionMapper({ onTreeViewChange }) {
 
   const fetchProgressToken = async () => {
     try {
-      console.log('🔄 Fetching progress token...');
       const response = await apiRequest('/api/get_progress_token');
-      console.log('📥 Progress token response:', response);
       if (response.success && response.token) {
-        console.log('✅ Got progress token:', response.token);
         return response.token;
       }
       throw new Error('Failed to get progress token');
     } catch (error) {
-      console.error('❌ Error fetching progress token:', error);
       throw error;
     }
   };
@@ -130,7 +121,6 @@ function EvolutionMapper({ onTreeViewChange }) {
           progressIntervalRef.current = null;
         }
       } catch (error) {
-        console.error('Error polling progress:', error);
         // Continue polling on error - it might be a temporary issue
       }
     };
@@ -149,20 +139,16 @@ function EvolutionMapper({ onTreeViewChange }) {
 
   const generateUnifiedTree = async (commonNames, scientificNames) => {
     try {
-      console.log('🌳 Starting generateUnifiedTree with progress monitoring');
       // Get progress token first
       setLoadingPhase('Preparing tree generation...');
       const token = await fetchProgressToken();
-      console.log('📋 Setting progress checklist enabled');
       setShowProgressChecklist(true);
       
       // Start monitoring progress
-      console.log('👁️ Starting progress monitoring');
       startProgressMonitoring(token);
       
       // First, try to get the full tree with dates from the unified endpoint
       setLoadingPhase('Generating phylogenetic tree with ancestral data...');
-      console.log('Making unified tree request with species:', commonNames, scientificNames);
       
       const data = await apiRequest('/api/full-tree-dated', {
         method: 'POST',
@@ -172,7 +158,6 @@ function EvolutionMapper({ onTreeViewChange }) {
         body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=2500`
       });
       
-      console.log('Full tree dated API response:', data);
       
       if (data.success === true || data.success[0] === true) {
         // Success with the unified endpoint - store tree data but don't render yet
@@ -187,7 +172,6 @@ function EvolutionMapper({ onTreeViewChange }) {
           const displayNames = missingCommonNames.slice(0, 3).join(', ');
           const moreText = missingCommonNames.length > 3 ? ` and ${missingCommonNames.length - 3} more` : '';
           
-          console.warn(`Age data not available for ${missingCount} species in this combination: ${displayNames}${moreText}`);
         } else {
           // Reset dropped species when all have data
           setDroppedSpecies([]);
@@ -233,7 +217,7 @@ function EvolutionMapper({ onTreeViewChange }) {
           commonAncestorNode.dispatchEvent(clickEvent);
         }
       } catch (error) {
-        console.log('Could not collapse tree:', error);
+        // Silently handle tree collapse errors
       }
     }
 
@@ -271,7 +255,6 @@ function EvolutionMapper({ onTreeViewChange }) {
         throw new Error('Failed to get random species');
       }
     } catch (error) {
-      console.error('Error in random species function:', error);
       setError(`Error getting random species: ${error.message}`);
     } finally {
       setLoading(false);
@@ -291,7 +274,6 @@ function EvolutionMapper({ onTreeViewChange }) {
   useEffect(() => {
     window.cs = () => {
       if (selectedSpecies.length === 0) {
-        console.log('No species selected');
         return;
       }
       
@@ -302,20 +284,16 @@ function EvolutionMapper({ onTreeViewChange }) {
       }).join(', ');
       
       navigator.clipboard.writeText(formattedSpecies).then(() => {
-        console.log('Copied to clipboard:', formattedSpecies);
+        // Clipboard copy successful
       }).catch(err => {
-        console.error('Failed to copy to clipboard:', err);
-        console.log('Selected species:', formattedSpecies);
+        // Fallback for browsers that don't support clipboard API
       });
     };
 
     window.as = async (speciesString) => {
       if (!speciesString) {
-        console.log('Usage: as("Species 1 (Scientific name 1), Species 2 (Scientific name 2), ...")');
         return;
       }
-      
-      console.log('Adding species:', speciesString);
       
       // Split by comma and extract scientific names from parentheses
       const speciesEntries = speciesString.split(',').map(s => s.trim());
@@ -325,17 +303,12 @@ function EvolutionMapper({ onTreeViewChange }) {
         const match = entry.match(/\(([^)]+)\)/);
         if (match) {
           scientificNames.push(match[1].trim());
-        } else {
-          console.warn(`No scientific name found in parentheses for: ${entry}`);
         }
       });
       
       if (scientificNames.length === 0) {
-        console.error('No scientific names found in parentheses');
         return;
       }
-      
-      console.log('Extracted scientific names:', scientificNames);
       
       // Search for each species and add them to the selection
       const newSpecies = [];
@@ -343,7 +316,6 @@ function EvolutionMapper({ onTreeViewChange }) {
       
       for (const scientificName of scientificNames) {
         try {
-          console.log(`Searching for: ${scientificName}`);
           const searchResults = await loadSpecies(scientificName);
           
           // Find exact match by scientific name
@@ -353,17 +325,13 @@ function EvolutionMapper({ onTreeViewChange }) {
           
           if (exactMatch) {
             newSpecies.push(exactMatch);
-            console.log(`Found: ${exactMatch.label}`);
           } else if (searchResults.length > 0) {
             // If no exact match, take the first result
             newSpecies.push(searchResults[0]);
-            console.log(`No exact match, using: ${searchResults[0].label}`);
           } else {
             notFound.push(scientificName);
-            console.warn(`Not found: ${scientificName}`);
           }
         } catch (error) {
-          console.error(`Error searching for ${scientificName}:`, error);
           notFound.push(scientificName);
         }
       }
@@ -376,19 +344,9 @@ function EvolutionMapper({ onTreeViewChange }) {
             !existingScientificNames.includes(s.data.scientific?.toLowerCase())
           );
           
-          const combined = [...prevSelected, ...uniqueNewSpecies];
-          console.log(`Added ${uniqueNewSpecies.length} new species (${newSpecies.length - uniqueNewSpecies.length} duplicates skipped)`);
-          console.log(`Total selected: ${combined.length} species`);
-          
-          return combined;
+          return [...prevSelected, ...uniqueNewSpecies];
         });
       }
-      
-      if (notFound.length > 0) {
-        console.warn(`Could not find ${notFound.length} species:`, notFound);
-      }
-      
-      console.log(`Successfully processed ${newSpecies.length} species`);
     };
     
     // Cleanup function to remove global commands

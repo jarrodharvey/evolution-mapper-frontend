@@ -19,7 +19,6 @@ function About() {
           throw new Error('Failed to fetch citations');
         }
       } catch (error) {
-        console.error('Error fetching citations:', error);
         setError(error.message);
       } finally {
         setLoading(false);
