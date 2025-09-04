@@ -149,7 +149,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=3000`
       });
       
       console.log('Full tree dated API response:', data);
