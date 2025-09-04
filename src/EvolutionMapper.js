@@ -51,6 +51,26 @@ function EvolutionMapper({ onTreeViewChange }) {
       return;
     }
 
+    // Collapse the current tree before generating a new one
+    if (treeHTML && iframeRef.current) {
+      try {
+        const iframe = iframeRef.current;
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const commonAncestorNode = doc.getElementById('common_ancestor_node');
+        if (commonAncestorNode) {
+          // Create and dispatch a proper click event for SVG elements
+          const clickEvent = new MouseEvent('click', {
+            view: iframe.contentWindow,
+            bubbles: true,
+            cancelable: true
+          });
+          commonAncestorNode.dispatchEvent(clickEvent);
+        }
+      } catch (error) {
+        console.log('Could not collapse tree:', error);
+      }
+    }
+
     setLoading(true);
     setLoadingPhase('Preparing tree generation...');
     setError(null);
@@ -191,6 +211,26 @@ function EvolutionMapper({ onTreeViewChange }) {
   };
 
   const pickRandomSpecies = async () => {
+    // Collapse the current tree before generating a new one
+    if (treeHTML && iframeRef.current) {
+      try {
+        const iframe = iframeRef.current;
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const commonAncestorNode = doc.getElementById('common_ancestor_node');
+        if (commonAncestorNode) {
+          // Create and dispatch a proper click event for SVG elements
+          const clickEvent = new MouseEvent('click', {
+            view: iframe.contentWindow,
+            bubbles: true,
+            cancelable: true
+          });
+          commonAncestorNode.dispatchEvent(clickEvent);
+        }
+      } catch (error) {
+        console.log('Could not collapse tree:', error);
+      }
+    }
+
     setLoading(true);
     setLoadingPhase('Selecting random species...');
     setError(null);
