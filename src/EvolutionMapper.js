@@ -169,15 +169,14 @@ function EvolutionMapper({ onTreeViewChange }) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=3000`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=2500`
       });
       
       console.log('Full tree dated API response:', data);
       
       if (data.success === true || data.success[0] === true) {
-        // Success with the unified endpoint
-        setTreeHTML(Array.isArray(data.html) ? data.html[0] : data.html);
-        setShowFloatingControls(true);
+        // Success with the unified endpoint - store tree data but don't render yet
+        const treeHtmlData = Array.isArray(data.html) ? data.html[0] : data.html;
         
         // Track and highlight species that lack ancestral data
         const missingCommonNames = data.missing_common_names || [];
@@ -193,6 +192,13 @@ function EvolutionMapper({ onTreeViewChange }) {
           // Reset dropped species when all have data
           setDroppedSpecies([]);
         }
+        
+        // Delay tree rendering until after progress widget disappears (3 seconds + small buffer)
+        setTimeout(() => {
+          setTreeHTML(treeHtmlData);
+          setShowFloatingControls(true);
+        }, 3200); // 200ms buffer after progress widget disappears
+        
         return;
       } else {
         throw new Error(Array.isArray(data.error) ? data.error[0] : data.error || 'Unified tree generation failed');
