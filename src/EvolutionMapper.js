@@ -270,10 +270,11 @@ function EvolutionMapper({ onTreeViewChange }) {
     };
   }, []);
 
-  // Add global console commands for copying and adding species
+  // Add global console commands and keyboard shortcuts for copying and adding species
   useEffect(() => {
     window.cs = () => {
       if (selectedSpecies.length === 0) {
+        console.log('No species selected');
         return;
       }
       
@@ -283,11 +284,35 @@ function EvolutionMapper({ onTreeViewChange }) {
         return `${common} (${scientific})`;
       }).join(', ');
       
-      navigator.clipboard.writeText(formattedSpecies).then(() => {
-        // Clipboard copy successful
-      }).catch(err => {
-        // Fallback for browsers that don't support clipboard API
-      });
+      console.log('About to copy:', formattedSpecies);
+      console.log('Clipboard API available:', !!navigator.clipboard);
+      console.log('Document has focus:', document.hasFocus());
+      
+      if (navigator.clipboard && document.hasFocus()) {
+        navigator.clipboard.writeText(formattedSpecies).then(() => {
+          console.log('Clipboard write successful');
+        }).catch(err => {
+          console.error('Clipboard write failed:', err);
+          console.log('Text to copy manually:', formattedSpecies);
+        });
+      } else {
+        // Fallback: create a temporary textarea and use execCommand (older method)
+        const textarea = document.createElement('textarea');
+        textarea.value = formattedSpecies;
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            console.log('Copied via execCommand:', formattedSpecies);
+          } else {
+            console.log('execCommand copy failed, text to copy manually:', formattedSpecies);
+          }
+        } catch (err) {
+          console.log('execCommand not supported, text to copy manually:', formattedSpecies);
+        }
+        document.body.removeChild(textarea);
+      }
     };
 
     window.as = async (speciesString) => {
@@ -354,7 +379,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       delete window.cs;
       delete window.as;
     };
-  }, [selectedSpecies, loadSpecies, setSelectedSpecies]);
+  }, [selectedSpecies]);
 
   useEffect(() => {
     if (onTreeViewChange) {
