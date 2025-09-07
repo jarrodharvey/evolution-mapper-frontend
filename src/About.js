@@ -58,6 +58,25 @@ function About() {
           </div>
         </section>
 
+        <section className="tools-section">
+          <h2>Development Tools</h2>
+          <div className="tool-info">
+            <h3>Built with Claude Code</h3>
+            <p>
+              This application was developed with assistance from{' '}
+              <a 
+                href="https://claude.ai/code" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="claude-link"
+              >
+                Claude Code
+              </a>
+              , Anthropic's AI-powered development assistant.
+            </p>
+          </div>
+        </section>
+
         <section className="repository-section">
           <h2>Source Code</h2>
           <div className="repositories">
