@@ -1,0 +1,22 @@
+name: evolution-mapper-frontend
+region: nyc
+static_sites:
+- build_command: npm run build
+  catchall_document: index.html
+  environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: jarrodharvey/evolution-mapper-frontend
+  name: frontend
+  output_dir: /build
+  source_dir: /
+envs:
+- key: REACT_APP_BACKEND_URL
+  scope: RUN_TIME
+  type: SECRET
+  value: YOUR_BACKEND_URL
+- key: REACT_APP_API_KEY
+  scope: RUN_TIME
+  type: SECRET
+  value: YOUR_API_KEY
