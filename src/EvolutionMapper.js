@@ -18,6 +18,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isToolbarCollapsed, setIsToolbarCollapsed] = useState(false);
   const [droppedSpecies, setDroppedSpecies] = useState([]);
+  const [unavailableSpecies, setUnavailableSpecies] = useState([]);
   const [progressData, setProgressData] = useState(null);
   const [showProgressChecklist, setShowProgressChecklist] = useState(false);
   const iframeRef = useRef(null);
@@ -167,14 +168,27 @@ function EvolutionMapper({ onTreeViewChange }) {
         const missingCommonNames = data.missing_common_names || [];
         setDroppedSpecies(missingCommonNames); // Set dropped species for highlighting
         
-        if (missingCommonNames.length > 0) {
-          const missingCount = missingCommonNames.length;
-          const displayNames = missingCommonNames.slice(0, 3).join(', ');
-          const moreText = missingCommonNames.length > 3 ? ` and ${missingCommonNames.length - 3} more` : '';
-          
-        } else {
+        // Track species that are unavailable/dropped due to unavailability
+        const droppedCommonNames = data.dropped_common_names || [];
+        setUnavailableSpecies(droppedCommonNames);
+        
+        if (missingCommonNames.length === 0) {
           // Reset dropped species when all have data
           setDroppedSpecies([]);
+        }
+        
+        // Handle unavailable species error message
+        if (droppedCommonNames.length > 0) {
+          const unavailableCount = droppedCommonNames.length;
+          const displayNames = droppedCommonNames.slice(0, 3).join(', ');
+          const moreText = droppedCommonNames.length > 3 ? ` and ${droppedCommonNames.length - 3} more` : '';
+          
+          // Show error message for unavailable species
+          setError(`${unavailableCount} species unavailable and excluded from tree: ${displayNames}${moreText}`);
+          setTimeout(() => setError(null), 5000); // Clear after 5 seconds
+        } else {
+          // Reset unavailable species when all are available
+          setUnavailableSpecies([]);
         }
         
         // Delay tree rendering until after progress widget disappears (3 seconds + small buffer)
@@ -484,21 +498,42 @@ function EvolutionMapper({ onTreeViewChange }) {
     return <components.MultiValueLabel {...props} />;
   };
 
-  // Custom styles for react-select to prevent clock symbol truncation
+  // Custom styles for react-select to prevent clock symbol truncation and highlight unavailable species
   const getCustomStyles = () => ({
-    multiValue: (provided) => ({
-      ...provided,
-      maxWidth: 'none', // Remove max-width constraints
-      minWidth: 'fit-content', // Ensure it fits content including clock
-    }),
-    multiValueLabel: (provided) => ({
-      ...provided,
-      whiteSpace: 'nowrap', // Prevent text wrapping
-      overflow: 'visible', // Show content that would be hidden
-      textOverflow: 'clip', // Don't add ellipsis
-      maxWidth: 'none', // Remove max-width constraints
-      minWidth: 'fit-content', // Ensure it fits the full content
-    }),
+    multiValue: (provided, state) => {
+      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        maxWidth: 'none', // Remove max-width constraints
+        minWidth: 'fit-content', // Ensure it fits content including clock
+        backgroundColor: isUnavailable ? '#fee' : provided.backgroundColor,
+        border: isUnavailable ? '1px solid #e74c3c' : provided.border,
+      };
+    },
+    multiValueLabel: (provided, state) => {
+      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        whiteSpace: 'nowrap', // Prevent text wrapping
+        overflow: 'visible', // Show content that would be hidden
+        textOverflow: 'clip', // Don't add ellipsis
+        maxWidth: 'none', // Remove max-width constraints
+        minWidth: 'fit-content', // Ensure it fits the full content
+        color: isUnavailable ? '#e74c3c' : provided.color,
+        fontWeight: isUnavailable ? '600' : provided.fontWeight,
+      };
+    },
+    multiValueRemove: (provided, state) => {
+      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      return {
+        ...provided,
+        color: isUnavailable ? '#e74c3c' : provided.color,
+        ':hover': {
+          backgroundColor: isUnavailable ? '#e74c3c' : provided[':hover'].backgroundColor,
+          color: isUnavailable ? 'white' : provided[':hover'].color,
+        },
+      };
+    },
     control: (provided) => ({
       ...provided,
       minHeight: 'auto', // Allow control to expand as needed
@@ -563,6 +598,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                     setSelectedSpecies(species);
                     setTreeError(null); // Clear tree error when species change
                     setDroppedSpecies([]); // Clear dropped species since combination changed
+                    setUnavailableSpecies([]); // Clear unavailable species since combination changed
                   }}
                   placeholder="Search species..."
                   noOptionsMessage={({ inputValue }) => 
@@ -645,6 +681,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 setSelectedSpecies(species);
                 setTreeError(null); // Clear tree error when species change
                 setDroppedSpecies([]); // Clear dropped species since combination changed
+                setUnavailableSpecies([]); // Clear unavailable species since combination changed
               }}
               placeholder="Search for species (e.g., whale, human, dog)..."
               noOptionsMessage={({ inputValue }) => 
