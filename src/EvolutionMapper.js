@@ -156,7 +156,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=2000`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=3000`
       });
       
       
@@ -166,11 +166,11 @@ function EvolutionMapper({ onTreeViewChange }) {
         
         // Track and highlight species that lack ancestral data
         const missingCommonNames = data.missing_common_names || [];
-        setDroppedSpecies(missingCommonNames); // Set dropped species for highlighting
+        setDroppedSpecies(Array.isArray(missingCommonNames) ? missingCommonNames : []); // Set dropped species for highlighting
         
         // Track species that are unavailable/dropped due to unavailability
         const droppedCommonNames = data.dropped_common_names || [];
-        setUnavailableSpecies(droppedCommonNames);
+        setUnavailableSpecies(Array.isArray(droppedCommonNames) ? droppedCommonNames : []);
         
         if (missingCommonNames.length === 0) {
           // Reset dropped species when all have data
@@ -430,7 +430,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   // Custom component for multi-value labels with dynamic clock formatting
   const MultiValueLabel = (props) => {
     const { data } = props;
-    const isDropped = droppedSpecies.includes(data.data.common);
+    const isDropped = Array.isArray(droppedSpecies) ? droppedSpecies.includes(data.data.common) : false;
     const hasDatelife = data.data.has_datelife;
     
     // Parse the original label to extract text and clock
@@ -501,7 +501,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   // Custom styles for react-select to prevent clock symbol truncation and highlight unavailable species
   const getCustomStyles = () => ({
     multiValue: (provided, state) => {
-      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      const isUnavailable = Array.isArray(unavailableSpecies) ? unavailableSpecies.includes(state.data.data.common) : false;
       return {
         ...provided,
         maxWidth: 'none', // Remove max-width constraints
@@ -511,7 +511,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       };
     },
     multiValueLabel: (provided, state) => {
-      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      const isUnavailable = Array.isArray(unavailableSpecies) ? unavailableSpecies.includes(state.data.data.common) : false;
       return {
         ...provided,
         whiteSpace: 'nowrap', // Prevent text wrapping
@@ -524,7 +524,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       };
     },
     multiValueRemove: (provided, state) => {
-      const isUnavailable = unavailableSpecies.includes(state.data.data.common);
+      const isUnavailable = Array.isArray(unavailableSpecies) ? unavailableSpecies.includes(state.data.data.common) : false;
       return {
         ...provided,
         color: isUnavailable ? '#e74c3c' : provided.color,
