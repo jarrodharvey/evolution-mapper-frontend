@@ -21,6 +21,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [unavailableSpecies, setUnavailableSpecies] = useState([]);
   const [progressData, setProgressData] = useState(null);
   const [showProgressChecklist, setShowProgressChecklist] = useState(false);
+  const [showDragHint, setShowDragHint] = useState(false);
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
 
@@ -195,6 +196,11 @@ function EvolutionMapper({ onTreeViewChange }) {
         setTimeout(() => {
           setTreeHTML(treeHtmlData);
           setShowFloatingControls(true);
+          
+          // Show drag hint for trees with more than 7 species
+          if (selectedSpecies.length > 7) {
+            setShowDragHint(true);
+          }
         }, 3200); // 200ms buffer after progress widget disappears
         
         return;
@@ -424,6 +430,17 @@ function EvolutionMapper({ onTreeViewChange }) {
       doc.head.appendChild(style);
     }
   }, [treeHTML]);
+
+  // Auto-hide drag hint after 8 seconds
+  useEffect(() => {
+    if (showDragHint) {
+      const timer = setTimeout(() => {
+        setShowDragHint(false);
+      }, 8000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showDragHint]);
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
@@ -769,6 +786,12 @@ function EvolutionMapper({ onTreeViewChange }) {
             )}
 
             <div className="tree-container" style={{ position: 'relative' }}>
+              {showDragHint && (
+                <div className="drag-pan-hint">
+                  <span className="drag-icon">👋</span>
+                  <span className="hint-text">Drag to pan around the tree</span>
+                </div>
+              )}
               {treeHTML ? (
                 <iframe
                   ref={iframeRef}

@@ -894,3 +894,61 @@
   color: #e74c3c !important;
   font-weight: 600 !important;
 }
+
+/* Drag-to-pan hint styles */
+.drag-pan-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(52, 152, 219, 0.95);
+  color: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  pointer-events: none;
+  animation: dragHintFadeIn 0.3s ease-out;
+}
+
+.drag-pan-hint .drag-icon {
+  font-size: 1.1rem;
+  animation: dragIconPulse 2s infinite;
+}
+
+.drag-pan-hint .hint-text {
+  white-space: nowrap;
+}
+
+@keyframes dragHintFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dragIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+@media (max-width: 768px) {
+  .drag-pan-hint {
+    font-size: 0.9rem;
+    padding: 14px 18px;
+  }
+}
