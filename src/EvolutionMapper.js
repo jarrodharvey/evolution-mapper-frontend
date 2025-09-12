@@ -525,6 +525,8 @@ function EvolutionMapper({ onTreeViewChange }) {
         minWidth: 'fit-content', // Ensure it fits content including clock
         backgroundColor: isUnavailable ? '#fee' : provided.backgroundColor,
         border: isUnavailable ? '1px solid #e74c3c' : provided.border,
+        margin: '1px 2px', // Reduce spacing between tags
+        fontSize: '0.8rem', // Smaller font for tags
       };
     },
     multiValueLabel: (provided, state) => {
@@ -538,6 +540,8 @@ function EvolutionMapper({ onTreeViewChange }) {
         minWidth: 'fit-content', // Ensure it fits the full content
         color: isUnavailable ? '#e74c3c' : provided.color,
         fontWeight: isUnavailable ? '600' : provided.fontWeight,
+        padding: '2px 4px', // Reduce padding inside tags
+        fontSize: '0.8rem', // Smaller font for tags
       };
     },
     multiValueRemove: (provided, state) => {
@@ -545,20 +549,33 @@ function EvolutionMapper({ onTreeViewChange }) {
       return {
         ...provided,
         color: isUnavailable ? '#e74c3c' : provided.color,
+        padding: '0 2px', // Reduce padding on remove button
         ':hover': {
           backgroundColor: isUnavailable ? '#e74c3c' : provided[':hover'].backgroundColor,
           color: isUnavailable ? 'white' : provided[':hover'].color,
         },
       };
     },
-    control: (provided) => ({
+    control: (provided, state) => ({
       ...provided,
-      minHeight: 'auto', // Allow control to expand as needed
+      minHeight: showFloatingControls ? '44px' : 'auto', // Taller height in floating mode to use available space
+      padding: showFloatingControls ? '4px' : provided.padding, // Increase padding in floating mode
     }),
     valueContainer: (provided) => ({
       ...provided,
       flexWrap: 'wrap', // Allow multi-values to wrap to new lines
       overflow: 'visible', // Don't hide overflowing content
+      padding: showFloatingControls ? '2px 6px' : provided.padding, // Reduce padding in floating mode
+    }),
+    indicatorsContainer: (provided) => ({
+      ...provided,
+      height: showFloatingControls ? '32px' : provided.height, // Match control height in floating mode
+    }),
+    input: (provided) => ({
+      ...provided,
+      margin: '0px',
+      paddingTop: '0px',
+      paddingBottom: '0px',
     }),
   });
 
@@ -596,14 +613,6 @@ function EvolutionMapper({ onTreeViewChange }) {
           
           {!isToolbarCollapsed && (
             <>
-              <button 
-                className="floating-exit-button"
-                onClick={toggleFloatingControls}
-                aria-label="Exit tree view"
-              >
-                ← Exit Tree View
-              </button>
-              
               <div className="floating-species-picker">
                 <AsyncSelect
                   isMulti
@@ -629,59 +638,73 @@ function EvolutionMapper({ onTreeViewChange }) {
                 />
               </div>
               
-              <div className="floating-species-info">
-                <span>Selected: {selectedSpecies.length} species</span>
-                {selectedSpecies.length < 3 && (
-                  <span className="floating-warning">Need 3+ species</span>
-                )}
-                {selectedSpecies.length > 20 && (
-                  <span className="floating-warning">Max 20 species</span>
-                )}
-                <span className="floating-clock-explanation">🕒 = species in age database</span>
-                <span className="floating-crossed-clock-explanation">
-                  <span style={{ position: 'relative', display: 'inline-block' }}>
-                    🕒
-                    <span style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      color: '#e74c3c',
-                      fontWeight: 'bold',
-                      fontSize: '12px',
-                      textShadow: '0 0 2px white'
-                    }}>
-                      ✗
+              <div className="floating-right-column">
+                <div className="floating-species-info">
+                  <span>Selected: {selectedSpecies.length} species</span>
+                  {selectedSpecies.length < 3 && (
+                    <span className="floating-warning">Need 3+ species</span>
+                  )}
+                  {selectedSpecies.length > 20 && (
+                    <span className="floating-warning">Max 20 species</span>
+                  )}
+                  <span className="floating-clock-explanation">🕒 = species in age database</span>
+                  <span className="floating-crossed-clock-explanation">
+                    <span style={{ position: 'relative', display: 'inline-block' }}>
+                      🕒
+                      <span style={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        color: '#e74c3c',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        textShadow: '0 0 2px white'
+                      }}>
+                        ✗
+                      </span>
                     </span>
+                    {' = age data unavailable for this combination'}
                   </span>
-                  {' = age data unavailable for this combination'}
-                </span>
-              </div>
-              
-              
-              <div className="floating-action-buttons">
-                <button 
-                  onClick={pickRandomSpecies}
-                  disabled={loading}
-                  className="floating-random-button"
-                >
-                  {loading ? 'Loading...' : 'Random'}
-                </button>
+                </div>
                 
-                <button 
-                  onClick={generateTree}
-                  disabled={!isValidSelection || loading}
-                  className="floating-generate-button"
-                >
-                  {loading ? 'Generating...' : 'Generate'}
-                </button>
+                <div className="floating-action-buttons">
+                  <button 
+                    onClick={generateTree}
+                    disabled={!isValidSelection || loading}
+                    className="floating-generate-button"
+                  >
+                    {loading ? 'Generating...' : 'Generate'}
+                  </button>
+                  
+                  <button 
+                    onClick={pickRandomSpecies}
+                    disabled={loading}
+                    className="floating-random-button"
+                  >
+                    {loading ? 'Loading...' : 'Random'}
+                  </button>
+                  
+                  <button 
+                    className="floating-exit-button"
+                    onClick={toggleFloatingControls}
+                    aria-label="Exit tree view"
+                  >
+                    ← Exit Tree View
+                  </button>
+                </div>
               </div>
             </>
           )}
         </div>
       )}
 
-      <main className={`App-main ${showFloatingControls ? 'floating-mode' : ''}`}>
+      <main 
+        className={`App-main ${showFloatingControls ? 'floating-mode' : ''}`}
+        style={showFloatingControls ? {
+          paddingTop: isToolbarCollapsed ? '45px' : '60px'
+        } : {}}
+      >
         {!showFloatingControls && (
           <div className="species-selector">
             <div className="species-selector-header">
