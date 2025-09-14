@@ -17,17 +17,23 @@ function Navigation({ hideInTreeView = false }) {
         </Link>
         
         <div className="nav-links">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
           >
             Explore
           </Link>
-          <Link 
-            to="/about" 
+          <Link
+            to="/about"
             className={`nav-link ${location.pathname === '/about' ? 'active' : ''}`}
           >
             About
+          </Link>
+          <Link
+            to="/attributions"
+            className={`nav-link ${location.pathname === '/attributions' ? 'active' : ''}`}
+          >
+            Attributions
           </Link>
         </div>
       </div>

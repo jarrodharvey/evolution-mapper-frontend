@@ -1,0 +1,138 @@
+.attributions-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background: linear-gradient(135deg, #e8f8f5 0%, #d5efeb 50%, #a3e0d4 100%);
+}
+
+.attributions-page .container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2.5rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.attributions-page h1 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.attribution-description {
+  font-size: 1.1rem;
+  color: #5d6d7e;
+  text-align: center;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.loading, .error, .no-attributions {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 2rem;
+  margin: 1rem 0;
+  border-radius: 10px;
+}
+
+.loading {
+  color: #3498db;
+  background-color: #ebf3fd;
+}
+
+.error {
+  color: #e74c3c;
+  background-color: #fdf2f2;
+}
+
+.no-attributions {
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+}
+
+.attributions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.attribution-item {
+  background: #ffffff;
+  border: 1px solid #e8f8f5;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.attribution-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.attribution-title {
+  font-size: 1.3rem;
+  color: #2c3e50;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.attribution-author,
+.attribution-source,
+.attribution-license,
+.attribution-description {
+  margin: 0.5rem 0;
+  line-height: 1.5;
+}
+
+.attribution-author {
+  color: #34495e;
+  font-weight: 500;
+}
+
+.attribution-source {
+  color: #27ae60;
+}
+
+.attribution-source a {
+  color: #27ae60;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-bottom 0.2s ease;
+}
+
+.attribution-source a:hover {
+  border-bottom: 1px solid #27ae60;
+}
+
+.attribution-license {
+  color: #8e44ad;
+  font-style: italic;
+}
+
+.attribution-description {
+  color: #5d6d7e;
+}
+
+@media (max-width: 768px) {
+  .attributions-page {
+    padding: 1rem;
+  }
+
+  .attributions-page .container {
+    padding: 1.5rem;
+  }
+
+  .attributions-page h1 {
+    font-size: 2rem;
+  }
+
+  .attribution-item {
+    padding: 1rem;
+  }
+}
