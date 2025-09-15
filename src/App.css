@@ -825,8 +825,8 @@
   height: 16px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 2px;
   border: 1px solid rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
 }
 
 .legend-content {
@@ -857,6 +857,165 @@
 
 .legend-error {
   color: #e74c3c;
+}
+
+/* Enhanced Legend Styling */
+.legend-title-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.legend-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1.2;
+}
+
+.legend-subtitle {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #7f8c8d;
+  margin-top: 2px;
+  line-height: 1.1;
+}
+
+.legend-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.legend-phylopic {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phylopic-silhouette {
+  max-width: 20px;
+  max-height: 20px;
+  filter: invert(0);
+  opacity: 1;
+}
+
+.legend-color-name {
+  font-size: 0.75rem;
+  color: #95a5a6;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.legend-attribution {
+  font-size: 0.7rem;
+  color: #95a5a6;
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* Type-specific styling */
+.legend-type-mixed .legend-items,
+.legend-type-dated .legend-items,
+.legend-type-hybrid .legend-items {
+  position: relative;
+}
+
+/* Age gradient visualization for age-related items */
+.legend-item.age-related {
+  position: relative;
+}
+
+.legend-item-ancestor_old .legend-color {
+  background-color: #08306b !important;
+  box-shadow: 0 0 0 2px rgba(8, 48, 107, 0.2);
+}
+
+.legend-item-ancestor_young .legend-color {
+  background-color: #a6cee3 !important;
+  box-shadow: 0 0 0 2px rgba(166, 206, 227, 0.3);
+}
+
+.legend-item-ancestor_no_age .legend-color {
+  background-color: #999999 !important;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(255, 255, 255, 0.3) 2px,
+    rgba(255, 255, 255, 0.3) 4px
+  );
+  box-shadow: 0 0 0 2px rgba(153, 153, 153, 0.2);
+}
+
+/* Hover effects */
+.legend-item {
+  transition: all 0.2s ease;
+  border-radius: 4px;
+  padding: 8px;
+  margin: -4px -8px;
+}
+
+.legend-item:hover {
+  background-color: rgba(52, 152, 219, 0.05);
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.legend-item:hover .legend-label {
+  color: #3498db;
+}
+
+.legend-item:hover .phylopic-silhouette {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Age gradient indicator for mixed types */
+.legend-type-mixed .legend-items::before,
+.legend-type-dated .legend-items::before,
+.legend-type-hybrid .legend-items::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, #08306b 0%, #a6cee3 70%, #999999 100%);
+  border-radius: 2px;
+  opacity: 0.6;
+}
+
+/* Enhanced responsive styling */
+@media (max-width: 768px) {
+  .legend-title {
+    font-size: 1rem;
+  }
+
+  .legend-subtitle {
+    font-size: 0.7rem;
+  }
+
+  .legend-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .legend-phylopic {
+    width: 18px;
+    height: 18px;
+  }
+
+  .phylopic-silhouette {
+    max-width: 18px;
+    max-height: 18px;
+  }
 }
 
 @media (max-width: 768px) {

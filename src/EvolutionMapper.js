@@ -22,6 +22,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [progressData, setProgressData] = useState(null);
   const [showProgressChecklist, setShowProgressChecklist] = useState(false);
   const [showDragHint, setShowDragHint] = useState(false);
+  const [legendType, setLegendType] = useState(null);
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
 
@@ -164,6 +165,10 @@ function EvolutionMapper({ onTreeViewChange }) {
       if (data.success === true || data.success[0] === true) {
         // Success with the unified endpoint - store tree data but don't render yet
         const treeHtmlData = Array.isArray(data.html) ? data.html[0] : data.html;
+
+        // Store legend type for legend API calls
+        const legendTypeData = Array.isArray(data.legend_type) ? data.legend_type[0] : data.legend_type;
+        setLegendType(legendTypeData);
         
         // Track and highlight species that lack ancestral data
         const missingCommonNames = data.missing_common_names || [];
@@ -855,7 +860,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   countdown={countdown}
                 />
               )}
-              <Legend />
+              <Legend legendType={legendType} />
             </div>
           </div>
         )}
