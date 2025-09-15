@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from './api-config';
 
-const Legend = ({ legendType }) => {
+const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange }) => {
   const [legendData, setLegendData] = useState([]);
   const [actualType, setActualType] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed;
+  const setIsCollapsed = onCollapseChange || setInternalIsCollapsed;
 
   useEffect(() => {
     const fetchLegend = async () => {
@@ -46,7 +50,12 @@ const Legend = ({ legendType }) => {
   }, [legendType]);
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    const newCollapsedState = !isCollapsed;
+    if (onCollapseChange) {
+      onCollapseChange(newCollapsedState);
+    } else {
+      setInternalIsCollapsed(newCollapsedState);
+    }
   };
 
   const getTypeDisplayInfo = (type) => {

@@ -23,8 +23,12 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [showProgressChecklist, setShowProgressChecklist] = useState(false);
   const [showDragHint, setShowDragHint] = useState(false);
   const [legendType, setLegendType] = useState(null);
+  const [expansionSpeed, setExpansionSpeed] = useState(3000);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [hasAutoCollapsed, setHasAutoCollapsed] = useState(false);
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
+  const autoCollapseTimeoutRef = useRef(null);
 
   const loadSpecies = async (inputValue) => {
     if (!inputValue || inputValue.length < 2) return [];
@@ -78,6 +82,8 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setCountdown(null);
+    setLegendCollapsed(false); // Reset legend to open state for new tree
+    setHasAutoCollapsed(false); // Reset auto-collapse flag for new tree
 
     try {
       const commonNames = selectedSpecies.map(species => species.data.common);
@@ -158,7 +164,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=3000`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=${expansionSpeed}`
       });
       
       
@@ -201,10 +207,33 @@ function EvolutionMapper({ onTreeViewChange }) {
         setTimeout(() => {
           setTreeHTML(treeHtmlData);
           setShowFloatingControls(true);
-          
+
           // Show drag hint for trees with more than 7 species
           if (selectedSpecies.length > 7) {
             setShowDragHint(true);
+          }
+
+          // Trigger auto-collapse for 6+ species (same timing as drag hint)
+          if (selectedSpecies.length >= 6 && !hasAutoCollapsed) {
+            // Calculate delay: expansion_speed * 0.003333 seconds
+            const delayMs = expansionSpeed * 0.003333 * 1000; // Convert to milliseconds
+
+            setTimeout(() => {
+              // Add animation class to legend toggle button before collapsing
+              const legendToggle = document.querySelector('.legend-toggle');
+              if (legendToggle) {
+                legendToggle.classList.add('auto-collapse-animation');
+
+                // Remove animation class after animation completes
+                setTimeout(() => {
+                  legendToggle.classList.remove('auto-collapse-animation');
+                }, 1200); // Animation duration from CSS (1.2 seconds)
+              }
+
+              // Collapse the legend and mark as auto-collapsed
+              setLegendCollapsed(true);
+              setHasAutoCollapsed(true);
+            }, delayMs);
           }
         }, 3200); // 200ms buffer after progress widget disappears
         
@@ -251,6 +280,8 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setCountdown(null);
+    setLegendCollapsed(false); // Reset legend to open state for new tree
+    setHasAutoCollapsed(false); // Reset auto-collapse flag for new tree
 
     try {
       const count = Math.floor(Math.random() * 5) + 3; // Random between 3-7 species
@@ -292,6 +323,9 @@ function EvolutionMapper({ onTreeViewChange }) {
   useEffect(() => {
     return () => {
       stopProgressMonitoring();
+      if (autoCollapseTimeoutRef.current) {
+        clearTimeout(autoCollapseTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -446,6 +480,8 @@ function EvolutionMapper({ onTreeViewChange }) {
       return () => clearTimeout(timer);
     }
   }, [showDragHint]);
+
+  // Auto-collapse is now handled directly in the tree generation logic (same timing as drag hint)
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
 
@@ -860,7 +896,11 @@ function EvolutionMapper({ onTreeViewChange }) {
                   countdown={countdown}
                 />
               )}
-              <Legend legendType={legendType} />
+              <Legend
+                legendType={legendType}
+                isCollapsed={legendCollapsed}
+                onCollapseChange={setLegendCollapsed}
+              />
             </div>
           </div>
         )}
