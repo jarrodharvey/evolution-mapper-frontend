@@ -166,7 +166,9 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
             );
             const nonAgeItems = legendData.filter(item =>
               !item.node_type?.includes('ancestor') ||
-              item.node_type?.includes('ancestor_no_age')
+              item.node_type?.includes('ancestor_no_age') ||
+              (item.node_type === 'ancestor') ||
+              (item.node_type === 'phylopic')
             );
 
             // Show gradient if we have any age items
