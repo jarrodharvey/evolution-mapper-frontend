@@ -159,16 +159,142 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
         <div className="legend-items">
           {Array.isArray(legendData) ? (() => {
             // Separate age-related and non-age-related items
-            const ageItems = legendData.filter(item => item.node_type?.includes('ancestor'));
-            const nonAgeItems = legendData.filter(item => !item.node_type?.includes('ancestor'));
+            // Only ancestor_old and ancestor_young go in gradient, ancestor_no_age shows as regular legend item
+            const ageItems = legendData.filter(item =>
+              item.node_type?.includes('ancestor') &&
+              (item.node_type?.includes('old') || item.node_type?.includes('young'))
+            );
+            const nonAgeItems = legendData.filter(item =>
+              !item.node_type?.includes('ancestor') ||
+              item.node_type?.includes('ancestor_no_age')
+            );
 
             // Show gradient if we have any age items
             const hasAgeGradient = ageItems.length > 0;
 
-            return (
-              <>
-                {/* Render non-age items first */}
-                {nonAgeItems.map((item, index) => {
+            // For all_dates and mixed types, categorize by color and shape
+            const shouldCategorize = actualType === 'dated' || actualType === 'mixed';
+
+            if (shouldCategorize) {
+              // Separate by color vs shape categories
+              const shapeItems = nonAgeItems.filter(item =>
+                item.label?.includes('Ancestor within Named Taxonomic Group') ||
+                item.label?.includes('Ancestor not in a named taxonomic group')
+              );
+              const colorItems = nonAgeItems.filter(item =>
+                !item.label?.includes('Ancestor within Named Taxonomic Group') &&
+                !item.label?.includes('Ancestor not in a named taxonomic group')
+              );
+
+              return (
+                <>
+                  {/* Color section */}
+                  {(colorItems.length > 0 || hasAgeGradient) && (
+                    <>
+                      <div className="legend-section-header">Color</div>
+                      {colorItems.map((item, index) => {
+                        return (
+                          <div
+                            key={`color-${index}`}
+                            className={`legend-item ${item.node_type ? `legend-item-${item.node_type}` : ''}`}
+                            title={`${item.label}: ${item.description}`}
+                          >
+                            <div className="legend-icon">
+                              <div
+                                className={`legend-color ${item.shape === 'circle' ? 'circle' : ''}`}
+                                style={{ backgroundColor: item.color }}
+                              />
+                            </div>
+                            <div className="legend-content">
+                              <div className="legend-label">
+                                {item.label}
+                                {item.color_name && (
+                                  <span className="legend-color-name">({item.color_name})</span>
+                                )}
+                              </div>
+                              <div className="legend-description">{item.description}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Render age gradient bar in Color section */}
+                      {hasAgeGradient && (
+                        <>
+                          <div className="legend-item">
+                            <div className="legend-icon"></div>
+                            <div className="legend-content">
+                              <div className="legend-label">Ancestor Age</div>
+                              <div className="legend-description">Color gradient showing relative age of ancestral nodes</div>
+                            </div>
+                          </div>
+                          <AgeGradientBar ageItems={ageItems} />
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* Shape section */}
+                  {shapeItems.length > 0 && (
+                    <>
+                      <div className="legend-section-header">Shape</div>
+                      {shapeItems.map((item, index) => {
+                        const isPhylopic = item.shape === 'phylopic' && item.phylopic_data;
+                        const isUnnamedAncestor = item.label?.includes('Ancestor not in a named taxonomic group');
+                        const isNamedAncestor = item.label?.includes('Ancestor within Named Taxonomic Group');
+
+                        return (
+                          <div
+                            key={`shape-${index}`}
+                            className={`legend-item ${item.node_type ? `legend-item-${item.node_type}` : ''}`}
+                            title={`${item.label}: ${item.description}`}
+                          >
+                            <div className="legend-icon">
+                              {(() => {
+                                if (isPhylopic) {
+                                  // Show neutral black silhouette for named ancestors
+                                  return (
+                                    <div className="legend-phylopic">
+                                      <img
+                                        src={item.phylopic_data.data_url[0]}
+                                        alt={`${item.phylopic_data.taxonomic_group[0]} silhouette`}
+                                        className="phylopic-silhouette neutral-silhouette"
+                                      />
+                                    </div>
+                                  );
+                                } else {
+                                  // Show hollow circle for unnamed ancestors
+                                  return (
+                                    <div className="legend-color circle hollow-circle" />
+                                  );
+                                }
+                              })()}
+                            </div>
+                            <div className="legend-content">
+                              <div className="legend-label">
+                                {item.label}
+                                <span className="legend-color-name">
+                                  ({isPhylopic ? 'Silhouette' : 'Circle'})
+                                </span>
+                              </div>
+                              <div className="legend-description">{item.description}</div>
+                              {isPhylopic && item.phylopic_data && (
+                                <div className="legend-attribution">{item.phylopic_data.attribution[0]}</div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+                </>
+              );
+            } else {
+              // Original rendering for no_dates type
+              return (
+                <>
+                  {/* Render non-age items first */}
+                  {nonAgeItems.map((item, index) => {
                   const isPhylopic = item.shape === 'phylopic' && item.phylopic_data;
 
                   return (
@@ -264,6 +390,7 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
                 )}
               </>
             );
+            }
           })() : (
             <div className="legend-error">Invalid legend data format</div>
           )}

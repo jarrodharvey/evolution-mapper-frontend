@@ -932,6 +932,19 @@
   margin-top: 2px;
 }
 
+.legend-section-header {
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  margin: 16px 0 8px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.legend-section-header:first-child {
+  margin-top: 0;
+}
+
 /* Type-specific styling */
 .legend-type-mixed .legend-items,
 .legend-type-dated .legend-items,
