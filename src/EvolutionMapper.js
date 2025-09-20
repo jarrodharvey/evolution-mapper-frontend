@@ -80,7 +80,6 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setCountdown(null);
-    setLegendCollapsed(false); // Reset legend to open state for new tree
 
     try {
       const commonNames = selectedSpecies.map(species => species.data.common);
@@ -255,7 +254,6 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setCountdown(null);
-    setLegendCollapsed(false); // Reset legend to open state for new tree
 
     try {
       const count = Math.floor(Math.random() * 5) + 3; // Random between 3-7 species
