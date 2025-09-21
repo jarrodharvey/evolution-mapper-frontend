@@ -31,6 +31,25 @@ function AttributionsPage() {
             });
           }
 
+          // Process Wikipedia/Wikimedia attributions
+          if (data.wikipedia_attributions) {
+            Object.values(data.wikipedia_attributions).forEach(item => {
+              const licenseInfo = item.detailed_license_info || {};
+              const artist = licenseInfo.artist && licenseInfo.artist[0] ? licenseInfo.artist[0] : 'Unknown';
+              const license = licenseInfo.license && licenseInfo.license[0] ? licenseInfo.license[0] : 'Creative Commons License';
+              const credit = licenseInfo.credit && licenseInfo.credit[0] ? licenseInfo.credit[0] : '';
+
+              allAttributions.push({
+                title: `${item.entity_label[0]} (${item.taxonomic_name[0]})`,
+                author: artist,
+                source: 'Wikimedia Commons',
+                source_url: item.image_url[0],
+                license: license,
+                description: `${item.attribution[0]}${credit && credit !== 'Unknown' ? ` - ${credit}` : ''}`
+              });
+            });
+          }
+
           // Process Unsplash attributions
           if (data.unsplash_attributions) {
             Object.values(data.unsplash_attributions).forEach(item => {
