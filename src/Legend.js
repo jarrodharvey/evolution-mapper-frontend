@@ -174,8 +174,8 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
             // Show gradient if we have any age items
             const hasAgeGradient = ageItems.length > 0;
 
-            // For all_dates and mixed types, categorize by color and shape
-            const shouldCategorize = actualType === 'dated' || actualType === 'mixed';
+            // For all_dates, dated, and mixed types, categorize by color and shape
+            const shouldCategorize = actualType === 'dated' || actualType === 'mixed' || actualType === 'all_dates';
 
             if (shouldCategorize) {
               // Separate by color vs shape categories
@@ -189,10 +189,10 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
               );
 
               return (
-                <>
-                  {/* Color section */}
+                <div className="legend-columns-container">
+                  {/* Color column */}
                   {(colorItems.length > 0 || hasAgeGradient) && (
-                    <>
+                    <div className="legend-column">
                       <div className="legend-section-header">Color</div>
                       {colorItems.map((item, index) => {
                         return (
@@ -233,12 +233,12 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
                           <AgeGradientBar ageItems={ageItems} />
                         </>
                       )}
-                    </>
+                    </div>
                   )}
 
-                  {/* Shape section */}
+                  {/* Shape column */}
                   {shapeItems.length > 0 && (
-                    <>
+                    <div className="legend-column">
                       <div className="legend-section-header">Shape</div>
                       {shapeItems.map((item, index) => {
                         const isPhylopic = item.shape === 'phylopic' && item.phylopic_data;
@@ -287,9 +287,9 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
                           </div>
                         );
                       })}
-                    </>
+                    </div>
                   )}
-                </>
+                </div>
               );
             } else {
               // Original rendering for no_dates type

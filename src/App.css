@@ -758,7 +758,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(0, 0, 0, 0.1);
   min-width: 280px;
-  max-width: 320px;
+  max-width: 520px;
   z-index: 9000;
   transition: all 0.3s ease;
 }
@@ -948,8 +948,34 @@
 /* Type-specific styling */
 .legend-type-mixed .legend-items,
 .legend-type-dated .legend-items,
+.legend-type-all_dates .legend-items,
 .legend-type-hybrid .legend-items {
   position: relative;
+}
+
+/* Column layout for categorized legends */
+.legend-columns-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.legend-column .legend-section-header {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 1rem;
+  color: #34495e;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 6px;
+}
+
+.legend-column .legend-section-header:first-child {
+  margin-top: 0;
 }
 
 /* Age gradient visualization for age-related items */
@@ -1038,6 +1064,7 @@
 /* Age gradient indicator for mixed types */
 .legend-type-mixed .legend-items::before,
 .legend-type-dated .legend-items::before,
+.legend-type-all_dates .legend-items::before,
 .legend-type-hybrid .legend-items::before {
   content: '';
   position: absolute;
@@ -1081,8 +1108,17 @@
     bottom: 10px;
     right: 10px;
     min-width: 240px;
-    max-width: 280px;
+    max-width: 380px;
     padding: 12px;
+  }
+
+  .legend-columns-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .legend-column {
+    min-width: 200px;
   }
   
   .tree-legend.collapsed {
