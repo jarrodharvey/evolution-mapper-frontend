@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Build for production
 - `npm test` - Run Jest tests
 - `npx playwright test` - Run end-to-end tests
+- `sh/restart_backend_server.sh` - Restart the R Plumber backend server (required for testing changes)
 
 ## Architecture Overview
 
@@ -42,9 +43,23 @@ This is a Create React App (CRA) frontend for visualizing phylogenetic trees. Th
 - End-to-end tests with Playwright in `tests/` directory
 - Tests cover: species selection, tree generation, error handling, UI interactions
 - Run tests with `npx playwright test`
+- For frontend testing of `/api/full-tree-dated`, use the frontend at localhost:3000 with species input via browser console: `as("Human (Homo sapiens), Chicken (Gallus gallus), Chimpanzee (Pan troglodytes)")`
+- Restart backend before testing changes: `sh/restart_backend_server.sh`
 
 ### Dependencies
 - `react-select` for species search/selection
 - `react-router-dom` for client-side routing
 - `playwright` for E2E testing
 - Backend proxy configured to localhost:8000 for API requests
+
+## Environment Configuration
+- Environment variables configured in `.env` (API keys, backend URL)
+- Never hardcode API keys - always use `process.env.REACT_APP_API_KEY`
+- Backend is R Plumber API serving phylogenetic tree data for 90k+ species
+- Use `REACT_APP_BACKEND_URL` to override default localhost:8000 backend
+
+## Important Development Notes
+- Never hardcode species names - database contains 90k+ species
+- For large API responses (like `/api/full-tree-dated`), test via frontend rather than direct API calls
+- Backend restart required when testing API changes: `sh/restart_backend_server.sh`
+- Tree generation is asynchronous with progress polling via `/api/progress` endpoint
