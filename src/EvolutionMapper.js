@@ -6,10 +6,13 @@ import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
 import ProgressChecklist from './ProgressChecklist';
 import ErrorDisplay from './ErrorDisplay';
+import PhylogeneticTreeView from './components/PhylogeneticTreeView';
+import { isMobile } from './utils/mobileDetection';
 
 function EvolutionMapper({ onTreeViewChange }) {
   const [selectedSpecies, setSelectedSpecies] = useState([]);
   const [treeHTML, setTreeHTML] = useState(null);
+  const [treeJSON, setTreeJSON] = useState(null); // For mobile tree view
   const [loading, setLoading] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState('');
   const [countdown, setCountdown] = useState(null);
@@ -27,6 +30,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
+  const [isMobileDevice] = useState(isMobile()); // Detect mobile once on component mount
 
   const loadSpecies = async (inputValue) => {
     if (!inputValue || inputValue.length < 2) return [];
@@ -79,6 +83,8 @@ function EvolutionMapper({ onTreeViewChange }) {
     setLoadingPhase('Preparing tree generation...');
     setError(null);
     setTreeError(null);
+    setTreeHTML(null);
+    setTreeJSON(null);
     setCountdown(null);
 
     try {
@@ -154,19 +160,35 @@ function EvolutionMapper({ onTreeViewChange }) {
       
       // First, try to get the full tree with dates from the unified endpoint
       setLoadingPhase('Generating phylogenetic tree with ancestral data...');
-      
+
+      if (isMobileDevice) {
+        // Collapse UI chrome to maximize viewport on small screens during tree fetches
+        setIsToolbarCollapsed(true);
+        setLegendCollapsed(true);
+      }
+
+      // Add as_json parameter for mobile devices
+      const asJsonParam = isMobileDevice ? '&as_json=true' : '';
+
       const data = await apiRequest('/api/full-tree-dated', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=${expansionSpeed}`
+        body: `common_names=${commonNames.join(',')}&scientific_names=${scientificNames.join(',')}&progress_token=${token}&expansion_speed=${expansionSpeed}${asJsonParam}`
       });
       
       
       if (data.success === true || data.success[0] === true) {
         // Success with the unified endpoint - store tree data but don't render yet
-        const treeHtmlData = Array.isArray(data.html) ? data.html[0] : data.html;
+        let treeHtmlData = null;
+        if (isMobileDevice) {
+          // Store JSON data for mobile tree view
+          setTreeJSON(data);
+        } else {
+          // Prepare HTML data for desktop iframe (but don't set it yet)
+          treeHtmlData = Array.isArray(data.html) ? data.html[0] : data.html;
+        }
 
         // Store legend type for legend API calls
         const legendTypeData = Array.isArray(data.legend_type) ? data.legend_type[0] : data.legend_type;
@@ -201,11 +223,15 @@ function EvolutionMapper({ onTreeViewChange }) {
         
         // Delay tree rendering until after progress widget disappears (3 seconds + small buffer)
         setTimeout(() => {
-          setTreeHTML(treeHtmlData);
+          if (!isMobileDevice && treeHtmlData) {
+            // For desktop, set the HTML data now
+            setTreeHTML(treeHtmlData);
+          }
+          // For mobile, JSON data is already stored above
           setShowFloatingControls(true);
 
-          // Show drag hint for trees with more than 7 species
-          if (selectedSpecies.length > 7) {
+          // Show drag hint for trees with more than 7 species (desktop only, since mobile doesn't need drag)
+          if (selectedSpecies.length > 7 && !isMobileDevice) {
             setShowDragHint(true);
           }
 
@@ -253,6 +279,8 @@ function EvolutionMapper({ onTreeViewChange }) {
     setLoadingPhase('Selecting random species...');
     setError(null);
     setTreeError(null);
+    setTreeHTML(null);
+    setTreeJSON(null);
     setCountdown(null);
 
     try {
@@ -824,26 +852,47 @@ function EvolutionMapper({ onTreeViewChange }) {
                   <span className="hint-text">Drag to pan around the tree</span>
                 </div>
               )}
-              {treeHTML ? (
-                <iframe
-                  ref={iframeRef}
-                  width="100%"
-                  height={getTreeHeight()}
-                  frameBorder="0"
-                  title="Phylogenetic Tree"
-                  className="tree-iframe"
-                />
-              ) : treeError ? (
-                <ErrorDisplay 
-                  error={treeError} 
-                  onRetry={() => {
-                    setTreeError(null);
-                    generateTree();
-                  }}
-                  onDismiss={() => setTreeError(null)}
-                  showRetryButton={true}
-                />
-              ) : null}
+              {isMobileDevice ? (
+                // Mobile: Show MUI Tree View
+                treeJSON ? (
+                  <PhylogeneticTreeView
+                    treeData={treeJSON}
+                    legendType={legendType}
+                  />
+                ) : treeError ? (
+                  <ErrorDisplay
+                    error={treeError}
+                    onRetry={() => {
+                      setTreeError(null);
+                      generateTree();
+                    }}
+                    onDismiss={() => setTreeError(null)}
+                    showRetryButton={true}
+                  />
+                ) : null
+              ) : (
+                // Desktop: Show HTML iframe
+                treeHTML ? (
+                  <iframe
+                    ref={iframeRef}
+                    width="100%"
+                    height={getTreeHeight()}
+                    frameBorder="0"
+                    title="Phylogenetic Tree"
+                    className="tree-iframe"
+                  />
+                ) : treeError ? (
+                  <ErrorDisplay
+                    error={treeError}
+                    onRetry={() => {
+                      setTreeError(null);
+                      generateTree();
+                    }}
+                    onDismiss={() => setTreeError(null)}
+                    showRetryButton={true}
+                  />
+                ) : null
+              )}
               {showProgressChecklist && progressData && showFloatingControls ? (
                 <div style={{ marginTop: '80px' }}>
                   <ProgressChecklist 
