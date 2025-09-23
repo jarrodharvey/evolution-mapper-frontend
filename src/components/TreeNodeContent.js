@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
+import { API_CONFIG } from '../api-config';
+
+const phylopicCache = new Map();
+const PHYLOPIC_ICON_REQUEST_SIZE = 64;
 
 const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
   const safeData = nodeData || {};
@@ -8,6 +12,7 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
   const {
     node_label = fallbackLabel || 'Unknown',
     color,
+    node_shape,
     phylopic_url,
     has_age,
     age_info,
@@ -17,27 +22,146 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
 
   const depth = typeof tree_depth === 'number' && tree_depth > 0 ? tree_depth : 0;
   const mobileIndentPx = 8 + Math.min(depth * 12, 60);
+  const defaultColor = color || '#999999';
+
+  const normalizedShape = typeof node_shape === 'string' ? node_shape.trim() : '';
+  const shouldRenderCircle = !normalizedShape || normalizedShape.toLowerCase() === 'circle';
+  const phylopicUuid = shouldRenderCircle ? null : normalizedShape;
+  const cacheKey = useMemo(() => {
+    if (!phylopicUuid) return null;
+    return `${phylopicUuid}|${defaultColor}`;
+  }, [phylopicUuid, defaultColor]);
+
+  const [phylopicImage, setPhylopicImage] = useState(() => {
+    if (!cacheKey) return null;
+    return phylopicCache.get(cacheKey) || null;
+  });
+
+  useEffect(() => {
+    if (!phylopicUuid || !cacheKey) {
+      setPhylopicImage(null);
+      return undefined;
+    }
+
+    if (phylopicCache.has(cacheKey)) {
+      setPhylopicImage(phylopicCache.get(cacheKey));
+      return undefined;
+    }
+
+    let isActive = true;
+    const controller = new AbortController();
+    const apiKey = process.env.REACT_APP_API_KEY || API_CONFIG.API_KEY;
+
+    const fetchPhylopic = async () => {
+      try {
+        const params = new URLSearchParams({
+          uuid: phylopicUuid,
+          color: defaultColor,
+          size: String(PHYLOPIC_ICON_REQUEST_SIZE)
+        });
+
+        const response = await fetch(`${API_CONFIG.BASE_URL}/api/get-phylopic?${params.toString()}`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json, text/plain',
+            'X-API-Key': apiKey
+          },
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to load PhyloPic: ${response.status}`);
+        }
+
+        const contentType = response.headers.get('content-type') || '';
+        let rawImage = null;
+
+        if (contentType.includes('application/json')) {
+          const json = await response.json();
+          rawImage = json?.data_url?.[0]
+            || json?.image_url?.[0]
+            || json?.image?.[0]
+            || json?.image
+            || json?.data
+            || json?.base64
+            || json?.imageData
+            || null;
+        } else {
+          rawImage = await response.text();
+        }
+
+        if (!rawImage) {
+          phylopicCache.set(cacheKey, null);
+          return;
+        }
+
+        const formattedImage = rawImage.startsWith('data:')
+          ? rawImage
+          : `data:image/png;base64,${rawImage}`;
+
+        phylopicCache.set(cacheKey, formattedImage);
+
+        if (isActive) {
+          setPhylopicImage(formattedImage);
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          return;
+        }
+        phylopicCache.set(cacheKey, null);
+        if (isActive) {
+          setPhylopicImage(null);
+        }
+      }
+    };
+
+    fetchPhylopic();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [cacheKey, defaultColor, phylopicUuid]);
 
   // Determine icon style and type
   const getNodeIcon = () => {
-    // If we have a PhyloPic URL, use it as an image
-    if (phylopic_url && phylopic_url !== null) {
+    const fallbackPhylopicUrl = !shouldRenderCircle && typeof phylopic_url === 'string' && phylopic_url.trim()
+      ? phylopic_url.trim()
+      : null;
+    const hasSilhouette = Boolean(phylopicImage || fallbackPhylopicUrl);
+
+    const containerSx = {
+      width: 24,
+      height: 24,
+      borderRadius: '50%',
+      border: '2px solid white',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      backgroundColor: hasSilhouette ? 'transparent' : defaultColor,
+      overflow: 'hidden',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    };
+
+    if (hasSilhouette) {
       return (
-        <img
-          src={phylopic_url}
-          alt={node_label}
-          style={{
-            width: 24,
-            height: 24,
-            filter: color ? `hue-rotate(${getHueRotation(color)}deg)` : 'none',
-            borderRadius: '50%'
-          }}
-          onError={(e) => {
-            // Fallback to circle if image fails
-            e.target.style.display = 'none';
-            e.target.nextSibling.style.display = 'block';
-          }}
-        />
+        <Box sx={containerSx} aria-label={`${node_label} silhouette`}>
+          <Box
+            component="img"
+            src={phylopicImage || fallbackPhylopicUrl}
+            alt=""
+            loading="lazy"
+            sx={{
+              width: '100%',
+              height: '100%',
+              display: 'block',
+              objectFit: 'contain'
+            }}
+            onError={(event) => {
+              event.currentTarget.style.display = 'none';
+            }}
+          />
+        </Box>
       );
     }
 
@@ -48,39 +172,12 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
           width: 24,
           height: 24,
           borderRadius: '50%',
-          backgroundColor: color || '#999999',
+          backgroundColor: defaultColor,
           border: '2px solid white',
           boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
         }}
       />
     );
-  };
-
-  // Convert hex color to hue rotation for PhyloPic images
-  const getHueRotation = (hexColor) => {
-    // Simple approximation - in practice you might want a more sophisticated color conversion
-    const hex = hexColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-
-    // Convert to HSL and extract hue
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0;
-
-    if (max !== min) {
-      const d = max - min;
-      switch (max) {
-        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-        case g: h = (b - r) / d + 2; break;
-        case b: h = (r - g) / d + 4; break;
-        default: h = 0; break;
-      }
-      h /= 6;
-    }
-
-    return h * 360;
   };
 
   // Format label with age information
@@ -122,18 +219,6 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         {/* Node Icon */}
         <Box sx={{ mr: 1, flexShrink: 0 }}>
           {getNodeIcon()}
-          {/* Fallback circle (hidden by default) */}
-          <Box
-            sx={{
-              width: 24,
-              height: 24,
-              borderRadius: '50%',
-              backgroundColor: color || '#999999',
-              border: '2px solid white',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-              display: phylopic_url ? 'none' : 'block'
-            }}
-          />
         </Box>
 
         {/* Node Label */}
