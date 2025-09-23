@@ -11,8 +11,12 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     phylopic_url,
     has_age,
     age_info,
-    node_type
+    node_type,
+    tree_depth
   } = safeData;
+
+  const depth = typeof tree_depth === 'number' && tree_depth > 0 ? tree_depth : 0;
+  const mobileIndentPx = 8 + Math.min(depth * 12, 60);
 
   // Determine icon style and type
   const getNodeIcon = () => {
@@ -106,6 +110,10 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         justifyContent: 'space-between',
         width: '100%',
         padding: '4px 8px',
+        paddingLeft: {
+          xs: `${mobileIndentPx}px`,
+          sm: '8px'
+        },
         minHeight: 40
       }}
     >

@@ -47,7 +47,7 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
   }, []);
 
   // Transform the nested JSON data into the hierarchical format RichTreeView expects
-  const transformTreeNode = useCallback((node, parentId = '', index = 0) => {
+  const transformTreeNode = useCallback((node, parentId = '', index = 0, depth = 0) => {
     if (!node) return null;
 
     const nodeId = parentId ? `${parentId}-${index}` : 'root';
@@ -72,14 +72,15 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
         wikipedia_url: node.info_panel.wikipedia_url?.[0] || node.info_panel.wikipedia_url,
         wikipedia_title: node.info_panel.wikipedia_title?.[0] || node.info_panel.wikipedia_title,
         geologic_age: node.info_panel.geologic_age?.[0] || node.info_panel.geologic_age,
-      } : null
+      } : null,
+      tree_depth: depth
     };
 
     // Create the tree item for RichTreeView
     // Build child items recursively and filter out nulls if any are returned
     const childItems = Array.isArray(node.children)
       ? node.children
-          .map((child, childIndex) => transformTreeNode(child, nodeId, childIndex))
+          .map((child, childIndex) => transformTreeNode(child, nodeId, childIndex, depth + 1))
           .filter(Boolean)
       : [];
 
