@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Box, ThemeProvider, createTheme } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
-import TreeNodeContent from './TreeNodeContent';
+import TreeNodeItem from './TreeNodeItem';
 import InfoPanel from './InfoPanel';
 
 // Create a custom theme for the tree view
@@ -41,8 +41,13 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
   const [selectedInfoNode, setSelectedInfoNode] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
 
+  const handleInfoClick = useCallback((nodeData) => {
+    setSelectedInfoNode(nodeData);
+    setInfoPanelOpen(true);
+  }, []);
+
   // Transform the nested JSON data into the hierarchical format RichTreeView expects
-  const transformTreeNode = (node, parentId = '', index = 0, itemMap) => {
+  const transformTreeNode = useCallback((node, parentId = '', index = 0) => {
     if (!node) return null;
 
     const nodeId = parentId ? `${parentId}-${index}` : 'root';
@@ -74,61 +79,35 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
     // Build child items recursively and filter out nulls if any are returned
     const childItems = Array.isArray(node.children)
       ? node.children
-          .map((child, childIndex) => transformTreeNode(child, nodeId, childIndex, itemMap))
+          .map((child, childIndex) => transformTreeNode(child, nodeId, childIndex))
           .filter(Boolean)
       : [];
 
-    const treeItem = {
+    return {
       id: nodeId,
       label: nodeData.node_label,
       nodeData,
       children: childItems
     };
-
-    itemMap.set(nodeId, treeItem);
-    return treeItem;
-  };
+  }, []);
 
   // Memoize the transformed tree data
-  const { items: treeItems, itemMap } = useMemo(() => {
+  const treeItems = useMemo(() => {
     console.log('PhylogeneticTreeView: Processing tree data:', treeData);
     if (!treeData || !treeData.tree_json) {
       console.log('PhylogeneticTreeView: No tree data available');
-      return { items: [], itemMap: new Map() };
+      return [];
     }
 
-    const map = new Map();
-    const rootItem = transformTreeNode(treeData.tree_json, '', 0, map);
+    const rootItem = transformTreeNode(treeData.tree_json);
     const items = rootItem ? [rootItem] : [];
     console.log('PhylogeneticTreeView: Transformed items:', items);
-    return { items, itemMap: map };
-  }, [treeData]);
-
-  // Handle info button clicks
-  const handleInfoClick = (nodeData) => {
-    setSelectedInfoNode(nodeData);
-    setInfoPanelOpen(true);
-  };
+    return items;
+  }, [treeData, transformTreeNode]);
 
   const handleInfoPanelClose = () => {
     setInfoPanelOpen(false);
     setSelectedInfoNode(null);
-  };
-
-  // Handle item click for info panel
-  const handleItemClick = (event, itemId) => {
-    const itemData = itemMap.get(itemId);
-    if (itemData && itemData.nodeData) {
-      const hasInfoContent = itemData.nodeData.info_panel && (
-        itemData.nodeData.info_panel.image_url ||
-        itemData.nodeData.info_panel.wikipedia_text ||
-        itemData.nodeData.info_panel.geologic_age
-      );
-
-      if (hasInfoContent) {
-        handleInfoClick(itemData.nodeData);
-      }
-    }
   };
 
   if (!treeItems || treeItems.length === 0) {
@@ -163,7 +142,14 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
         <RichTreeView
           items={treeItems}
           defaultExpandedItems={[treeItems[0]?.id]}
-          onItemClick={handleItemClick}
+          slots={{
+            item: TreeNodeItem
+          }}
+          slotProps={{
+            item: {
+              onInfoClick: handleInfoClick
+            }
+          }}
           sx={{
             flexGrow: 1,
             maxWidth: '100%',

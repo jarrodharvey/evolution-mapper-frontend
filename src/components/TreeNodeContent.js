@@ -2,17 +2,17 @@ import React from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 
-const TreeNodeContent = ({ nodeData, onInfoClick }) => {
-  if (!nodeData) return null;
+const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
+  const safeData = nodeData || {};
 
   const {
-    node_label,
+    node_label = fallbackLabel || 'Unknown',
     color,
     phylopic_url,
     has_age,
     age_info,
     node_type
-  } = nodeData;
+  } = safeData;
 
   // Determine icon style and type
   const getNodeIcon = () => {
@@ -88,11 +88,15 @@ const TreeNodeContent = ({ nodeData, onInfoClick }) => {
   };
 
   // Determine if info button should be shown
-  const hasInfoContent = nodeData.info_panel && (
-    nodeData.info_panel.image_url ||
-    nodeData.info_panel.wikipedia_text ||
-    nodeData.info_panel.geologic_age
+  const infoPanelData = safeData.info_panel;
+  const hasInfoContent = Boolean(
+    infoPanelData && (
+      infoPanelData.image_url ||
+      infoPanelData.wikipedia_text ||
+      infoPanelData.geologic_age
+    )
   );
+  const showInfoButton = hasInfoContent && typeof onInfoClick === 'function';
 
   return (
     <Box
@@ -142,13 +146,17 @@ const TreeNodeContent = ({ nodeData, onInfoClick }) => {
       </Box>
 
       {/* Right side: Info Button */}
-      {hasInfoContent && (
+      {showInfoButton && (
         <IconButton
           size="small"
           onClick={(e) => {
             e.stopPropagation();
-            onInfoClick(nodeData);
+            if (safeData && onInfoClick) {
+              onInfoClick(safeData);
+            }
           }}
+          aria-label={`View info for ${node_label}`}
+          title={`View info for ${node_label}`}
           sx={{
             ml: 1,
             flexShrink: 0,
