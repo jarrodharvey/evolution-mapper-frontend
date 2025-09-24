@@ -4,7 +4,14 @@ import { useTreeItemModel } from '@mui/x-tree-view/hooks';
 import TreeNodeContent from './TreeNodeContent';
 
 const TreeNodeItem = forwardRef(function TreeNodeItem(props, ref) {
-  const { label, itemId, onInfoClick, ...other } = props;
+  const {
+    label,
+    itemId,
+    onInfoClick,
+    onPhylopicStatusChange,
+    phylopicRefreshEvent,
+    ...other
+  } = props;
   const itemModel = useTreeItemModel(itemId);
   const nodeData = itemModel?.nodeData;
 
@@ -18,6 +25,9 @@ const TreeNodeItem = forwardRef(function TreeNodeItem(props, ref) {
           nodeData={nodeData}
           fallbackLabel={typeof label === 'string' ? label : undefined}
           onInfoClick={onInfoClick}
+          itemId={itemId}
+          onPhylopicStatusChange={onPhylopicStatusChange}
+          phylopicRefreshEvent={phylopicRefreshEvent}
         />
       )}
     />

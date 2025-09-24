@@ -10,9 +10,14 @@ import {
   Link,
   IconButton
 } from '@mui/material';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import { useTheme } from '@mui/material/styles';
 import { Close as CloseIcon } from '@mui/icons-material';
 
 const InfoPanel = ({ open, onClose, nodeData }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   if (!nodeData || !nodeData.info_panel) {
     return null;
   }
@@ -138,11 +143,13 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
         )}
 
         {/* Node Type and Age Info */}
-        <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
-          <Typography variant="caption" color="text.secondary">
-            Type: {nodeData.node_type} | Age: {nodeData.age_info}
-          </Typography>
-        </Box>
+        {!isMobile && (
+          <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              Type: {nodeData.node_type} | Age: {nodeData.age_info}
+            </Typography>
+          </Box>
+        )}
       </DialogContent>
 
       <DialogActions sx={{ p: 2 }}>

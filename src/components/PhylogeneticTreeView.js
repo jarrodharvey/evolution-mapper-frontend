@@ -46,6 +46,10 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
   const [expandedItems, setExpandedItems] = useState([]);
   const animationTimeoutsRef = useRef([]);
   const expandedItemsRef = useRef([]);
+  const [phylopicRefreshEvent, setPhylopicRefreshEvent] = useState({ token: 0, targets: [] });
+  const phylopicStatusRef = useRef(new Map());
+  const secondPassAttemptedRef = useRef(false);
+  const expansionAuditTimeoutRef = useRef(null);
 
   useEffect(() => {
     expandedItemsRef.current = expandedItems;
@@ -55,6 +59,63 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
     setSelectedInfoNode(nodeData);
     setInfoPanelOpen(true);
   }, []);
+
+  const handlePhylopicStatusChange = useCallback((itemId, status) => {
+    if (!itemId) {
+      return;
+    }
+
+    const registry = phylopicStatusRef.current;
+
+    if (!status) {
+      registry.delete(itemId);
+      return;
+    }
+
+    registry.set(itemId, status);
+  }, []);
+
+  const runPhylopicAudit = useCallback(() => {
+    const registry = phylopicStatusRef.current;
+    if (!registry || registry.size === 0) {
+      return;
+    }
+
+    const missingItems = [];
+    registry.forEach((status, itemId) => {
+      if (!status) {
+        return;
+      }
+
+      const { phylopicUuid, hasSilhouette } = status;
+      if (phylopicUuid && !hasSilhouette) {
+        missingItems.push(itemId);
+      }
+    });
+
+    if (missingItems.length > 0) {
+      setPhylopicRefreshEvent({ token: Date.now(), targets: missingItems });
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (expansionAuditTimeoutRef.current) {
+        clearTimeout(expansionAuditTimeoutRef.current);
+        expansionAuditTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    phylopicStatusRef.current = new Map();
+    secondPassAttemptedRef.current = false;
+    if (expansionAuditTimeoutRef.current) {
+      clearTimeout(expansionAuditTimeoutRef.current);
+      expansionAuditTimeoutRef.current = null;
+    }
+    setPhylopicRefreshEvent({ token: 0, targets: [] });
+  }, [treeData]);
 
   const normalizeFieldValue = useCallback((value) => {
     if (Array.isArray(value)) {
@@ -219,6 +280,30 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
     };
   }, [expansionSequence, clearAnimationTimeouts]);
 
+  useEffect(() => {
+    if (!expansionSequence.length) {
+      return;
+    }
+
+    const uniqueExpansionIds = Array.from(new Set(expansionSequence));
+    if (!uniqueExpansionIds.length) {
+      return;
+    }
+
+    const expandedSet = new Set(expandedItems);
+    const allExpanded = uniqueExpansionIds.every((id) => expandedSet.has(id));
+
+    if (allExpanded && !secondPassAttemptedRef.current) {
+      secondPassAttemptedRef.current = true;
+      if (expansionAuditTimeoutRef.current) {
+        clearTimeout(expansionAuditTimeoutRef.current);
+      }
+      expansionAuditTimeoutRef.current = setTimeout(() => {
+        runPhylopicAudit();
+      }, 600);
+    }
+  }, [expandedItems, expansionSequence, runPhylopicAudit]);
+
   // Collapse expanded ancestors one-by-one so the tree "shrinks" back to the common ancestor
   useEffect(() => {
     if (!collapseToRootSignal) {
@@ -298,7 +383,9 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
           }}
           slotProps={{
             item: {
-              onInfoClick: handleInfoClick
+              onInfoClick: handleInfoClick,
+              onPhylopicStatusChange: handlePhylopicStatusChange,
+              phylopicRefreshEvent
             }
           }}
           sx={{

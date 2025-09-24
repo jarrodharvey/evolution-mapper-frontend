@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, IconButton } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { API_CONFIG } from '../api-config';
@@ -8,7 +8,14 @@ const PHYLOPIC_ICON_REQUEST_SIZE = 64;
 const MAX_PHYLOPIC_FETCH_RETRIES = 3;
 const PHYLOPIC_RETRY_DELAY_MS = 600;
 
-const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
+const TreeNodeContent = ({
+  nodeData,
+  fallbackLabel,
+  onInfoClick,
+  itemId,
+  onPhylopicStatusChange,
+  phylopicRefreshEvent
+}) => {
   const safeData = nodeData || {};
 
   const {
@@ -42,15 +49,53 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     if (!cacheKey) return null;
     return phylopicCache.get(cacheKey) || null;
   });
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  const lastRefreshTokenRef = useRef(null);
+  const [imageError, setImageError] = useState(false);
+
+  const fallbackPhylopicUrl = !shouldRenderCircle && typeof phylopic_url === 'string' && phylopic_url.trim()
+    ? phylopic_url.trim()
+    : null;
+
+  const resolvedRefreshToken = phylopicRefreshEvent?.token || 0;
+  const refreshTargets = Array.isArray(phylopicRefreshEvent?.targets) ? phylopicRefreshEvent.targets : [];
+  const shouldProcessRefresh = Boolean(
+    phylopicUuid &&
+    itemId &&
+    refreshTargets.includes(itemId) &&
+    resolvedRefreshToken
+  );
+
+  useEffect(() => {
+    if (!shouldProcessRefresh) {
+      return;
+    }
+
+    if (lastRefreshTokenRef.current === resolvedRefreshToken) {
+      return;
+    }
+
+    lastRefreshTokenRef.current = resolvedRefreshToken;
+
+    if (cacheKey) {
+      phylopicCache.delete(cacheKey);
+    }
+
+    setPhylopicImage(null);
+    setImageError(false);
+    setRefreshCounter((previous) => previous + 1);
+  }, [cacheKey, resolvedRefreshToken, shouldProcessRefresh]);
 
   useEffect(() => {
     if (!phylopicUuid || !cacheKey) {
       setPhylopicImage(null);
+      setImageError(false);
       return undefined;
     }
 
     if (phylopicCache.has(cacheKey)) {
       setPhylopicImage(phylopicCache.get(cacheKey));
+      setImageError(false);
       return undefined;
     }
 
@@ -102,6 +147,10 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
 
         if (!rawImage) {
           phylopicCache.set(cacheKey, null);
+          if (isActive) {
+            setPhylopicImage(null);
+            setImageError(true);
+          }
           return;
         }
 
@@ -123,6 +172,7 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
           phylopicCache.set(cacheKey, null);
           if (isActive) {
             setPhylopicImage(null);
+            setImageError(true);
           }
           return;
         }
@@ -140,6 +190,7 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         phylopicCache.set(cacheKey, null);
         if (isActive) {
           setPhylopicImage(null);
+          setImageError(true);
         }
       }
     };
@@ -153,16 +204,29 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         clearTimeout(retryTimerId);
       }
     };
-  }, [cacheKey, defaultColor, phylopicUuid]);
+  }, [cacheKey, defaultColor, phylopicUuid, refreshCounter]);
+
+  useEffect(() => {
+    if (!onPhylopicStatusChange || !itemId) {
+      return undefined;
+    }
+
+    const hasSilhouette = Boolean((phylopicImage || fallbackPhylopicUrl) && !imageError);
+
+    onPhylopicStatusChange(itemId, {
+      phylopicUuid,
+      hasSilhouette,
+      defaultColor
+    });
+
+    return () => {
+      onPhylopicStatusChange(itemId, null);
+    };
+  }, [defaultColor, fallbackPhylopicUrl, imageError, itemId, onPhylopicStatusChange, phylopicImage, phylopicUuid]);
 
   // Determine icon style and type
   const getNodeIcon = () => {
-    const fallbackPhylopicUrl = !shouldRenderCircle && typeof phylopic_url === 'string' && phylopic_url.trim()
-      ? phylopic_url.trim()
-      : null;
-    const hasSilhouette = Boolean(phylopicImage || fallbackPhylopicUrl);
-
-    if (hasSilhouette) {
+    if (!imageError && (fallbackPhylopicUrl || phylopicImage)) {
       return (
         <Box
           sx={{
@@ -185,8 +249,15 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
               display: 'block',
               objectFit: 'contain'
             }}
-            onError={(event) => {
-              event.currentTarget.style.display = 'none';
+            onError={() => {
+              setImageError(true);
+              setPhylopicImage(null);
+              if (cacheKey) {
+                phylopicCache.set(cacheKey, null);
+              }
+            }}
+            onLoad={() => {
+              setImageError(false);
             }}
           />
         </Box>
