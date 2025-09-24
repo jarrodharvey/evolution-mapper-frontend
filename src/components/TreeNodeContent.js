@@ -211,7 +211,14 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
       }}
     >
       {/* Left side: Icon and Label */}
-      <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flex: 1,
+          minWidth: 0
+        }}
+      >
         {/* Node Icon */}
         <Box sx={{ mr: 1, flexShrink: 0 }}>
           {getNodeIcon()}
@@ -225,9 +232,11 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
             fontWeight: node_type === 'species' ? 600 : 400,
             color: has_age ? '#1976d2' : 'text.primary',
             fontSize: node_type === 'species' ? '0.9rem' : '0.85rem',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
+            lineHeight: 1.4,
+            overflow: { xs: 'visible', md: 'hidden' },
+            textOverflow: { xs: 'clip', md: 'ellipsis' },
+            whiteSpace: { xs: 'normal', md: 'nowrap' },
+            wordBreak: { xs: 'break-word', md: 'normal' }
           }}
         >
           {getDisplayLabel()}
