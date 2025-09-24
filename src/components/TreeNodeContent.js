@@ -17,12 +17,9 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     phylopic_url,
     has_age,
     age_info,
-    node_type,
-    tree_depth
+    node_type
   } = safeData;
 
-  const depth = typeof tree_depth === 'number' && tree_depth > 0 ? tree_depth : 0;
-  const mobileIndentPx = 8 + Math.min(depth * 12, 60);
   const defaultColor = color || '#999999';
 
   const normalizedShape = typeof node_shape === 'string' ? node_shape.trim() : '';
@@ -209,11 +206,7 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        padding: '4px 8px',
-        paddingLeft: {
-          xs: `${mobileIndentPx}px`,
-          sm: '8px'
-        },
+        padding: '4px 12px',
         minHeight: 40
       }}
     >

@@ -14,9 +14,12 @@ const treeTheme = createTheme({
   components: {
     MuiTreeItem: {
       styleOverrides: {
-        root: {
+        root: ({ theme }) => ({
           '& .MuiTreeItem-content': {
-            padding: '4px 0',
+            paddingTop: theme.spacing(0.5),
+            paddingBottom: theme.spacing(0.5),
+            paddingRight: 0,
+            paddingLeft: `calc(${theme.spacing(1)} + var(--TreeView-itemChildrenIndentation) * var(--TreeView-itemDepth))`,
             borderRadius: '4px',
             '&:hover': {
               backgroundColor: 'rgba(25, 118, 210, 0.08)',
@@ -31,7 +34,7 @@ const treeTheme = createTheme({
           '& .MuiTreeItem-label': {
             padding: 0,
           },
-        },
+        }),
       },
     },
   },
@@ -143,6 +146,7 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
         <RichTreeView
           items={treeItems}
           defaultExpandedItems={[treeItems[0]?.id]}
+          itemChildrenIndentation={24}
           slots={{
             item: TreeNodeItem
           }}
