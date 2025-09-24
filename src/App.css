@@ -1106,7 +1106,8 @@
 @media (max-width: 768px) {
   .tree-legend {
     bottom: 10px;
-    right: 10px;
+    left: 10px;
+    right: auto;
     min-width: 240px;
     max-width: 380px;
     padding: 12px;
