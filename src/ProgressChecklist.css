@@ -25,7 +25,7 @@
 
 .progress-checklist {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px 16px;
 }
 
@@ -35,6 +35,7 @@
   padding: 8px 12px;
   border-radius: 6px;
   transition: background-color 0.3s ease;
+  min-width: 0;
 }
 
 .progress-step.completed {
@@ -78,6 +79,9 @@
   flex: 1;
   font-weight: 500;
   color: #2c3e50;
+  min-width: 0;
+  font-size: 0.9em;
+  line-height: 1.3;
 }
 
 .progress-step-duration {
