@@ -13,6 +13,7 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     node_label = fallbackLabel || 'Unknown',
     color,
     node_shape,
+    phylopic_uuid,
     phylopic_url,
     has_age,
     age_info,
@@ -25,8 +26,14 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
   const defaultColor = color || '#999999';
 
   const normalizedShape = typeof node_shape === 'string' ? node_shape.trim() : '';
+  const normalizedPhylopicUuid = typeof phylopic_uuid === 'string' ? phylopic_uuid.trim() : '';
+
   const shouldRenderCircle = !normalizedShape || normalizedShape.toLowerCase() === 'circle';
-  const phylopicUuid = shouldRenderCircle ? null : normalizedShape;
+  const inferredUuid = (!shouldRenderCircle && normalizedShape
+    && !['phylopic', 'phylopic_neutral'].includes(normalizedShape.toLowerCase()))
+    ? normalizedShape
+    : null;
+  const phylopicUuid = normalizedPhylopicUuid || inferredUuid;
   const cacheKey = useMemo(() => {
     if (!phylopicUuid) return null;
     return `${phylopicUuid}|${defaultColor}`;
