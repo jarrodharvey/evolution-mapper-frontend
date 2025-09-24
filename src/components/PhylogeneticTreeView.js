@@ -366,7 +366,12 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
         sx={{
           width: '100%',
           height: '100%',
-          overflow: 'auto',
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflowX: 'hidden',
+          overflowY: 'auto',
+          WebkitOverflowScrolling: 'touch',
           padding: 2,
           '& .MuiTreeView-root': {
             minHeight: '100%',
@@ -391,7 +396,11 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
           sx={{
             flexGrow: 1,
             maxWidth: '100%',
+            minHeight: 0,
+            overflowX: 'hidden',
             overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
           }}
         />
 

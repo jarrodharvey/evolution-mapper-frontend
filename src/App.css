@@ -53,14 +53,22 @@
   display: flex;
   flex-direction: column;
   padding-top: 60px; /* Account for compact toolbar */
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .evolution-mapper-container.floating-mode {
   max-width: none;
   margin: 0;
   padding: 0;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Hide navigation when in tree view (floating mode) */
@@ -463,12 +471,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .tree-display.floating-mode .tree-container {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 .tree-display.floating-mode .tree-iframe {
