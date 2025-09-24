@@ -5,6 +5,8 @@ import { API_CONFIG } from '../api-config';
 
 const phylopicCache = new Map();
 const PHYLOPIC_ICON_REQUEST_SIZE = 64;
+const MAX_PHYLOPIC_FETCH_RETRIES = 3;
+const PHYLOPIC_RETRY_DELAY_MS = 600;
 
 const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
   const safeData = nodeData || {};
@@ -56,7 +58,9 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     const controller = new AbortController();
     const apiKey = process.env.REACT_APP_API_KEY || API_CONFIG.API_KEY;
 
-    const fetchPhylopic = async () => {
+    let retryTimerId;
+
+    const fetchPhylopic = async (attempt = 1) => {
       try {
         const params = new URLSearchParams({
           uuid: phylopicUuid,
@@ -74,7 +78,9 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to load PhyloPic: ${response.status}`);
+          const error = new Error(`Failed to load PhyloPic: ${response.status}`);
+          error.status = response.status;
+          throw error;
         }
 
         const contentType = response.headers.get('content-type') || '';
@@ -112,6 +118,25 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
         if (error?.name === 'AbortError') {
           return;
         }
+
+        if (error?.status === 404) {
+          phylopicCache.set(cacheKey, null);
+          if (isActive) {
+            setPhylopicImage(null);
+          }
+          return;
+        }
+
+        if (attempt < MAX_PHYLOPIC_FETCH_RETRIES && isActive) {
+          retryTimerId = setTimeout(() => {
+            if (!isActive) {
+              return;
+            }
+            fetchPhylopic(attempt + 1);
+          }, PHYLOPIC_RETRY_DELAY_MS * attempt);
+          return;
+        }
+
         phylopicCache.set(cacheKey, null);
         if (isActive) {
           setPhylopicImage(null);
@@ -124,6 +149,9 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
     return () => {
       isActive = false;
       controller.abort();
+      if (retryTimerId) {
+        clearTimeout(retryTimerId);
+      }
     };
   }, [cacheKey, defaultColor, phylopicUuid]);
 
