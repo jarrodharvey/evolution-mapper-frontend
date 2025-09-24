@@ -205,11 +205,29 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
 
   // Determine if info button should be shown
   const infoPanelData = safeData.info_panel;
+
+  const hasInfoValue = (value) => {
+    if (Array.isArray(value)) {
+      return value.some((item) => hasInfoValue(item));
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return false;
+      }
+      const lower = trimmed.toLowerCase();
+      return lower !== 'null' && lower !== 'undefined';
+    }
+
+    return value !== null && value !== undefined && value !== '';
+  };
+
   const hasInfoContent = Boolean(
     infoPanelData && (
-      infoPanelData.image_url ||
-      infoPanelData.wikipedia_text ||
-      infoPanelData.geologic_age
+      hasInfoValue(infoPanelData.image_url) ||
+      hasInfoValue(infoPanelData.wikipedia_text) ||
+      hasInfoValue(infoPanelData.geologic_age)
     )
   );
   const showInfoButton = hasInfoContent && typeof onInfoClick === 'function';

@@ -17,6 +17,23 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
     return null;
   }
 
+  const hasValue = (value) => {
+    if (Array.isArray(value)) {
+      return value.some((item) => hasValue(item));
+    }
+
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return false;
+      }
+      const lower = trimmed.toLowerCase();
+      return lower !== 'null' && lower !== 'undefined';
+    }
+
+    return value !== null && value !== undefined && value !== '';
+  };
+
   const {
     image_url,
     image_attribution,
@@ -25,7 +42,7 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
     geologic_age
   } = nodeData.info_panel;
 
-  const hasContent = image_url || wikipedia_text || geologic_age;
+  const hasContent = [image_url, wikipedia_text, geologic_age].some((value) => hasValue(value));
 
   if (!hasContent) {
     return null;
@@ -59,10 +76,10 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
 
       <DialogContent dividers>
         {/* Image Display */}
-        {image_url && (
+        {hasValue(image_url) && (
           <Box sx={{ mb: 2, textAlign: 'center' }}>
             <img
-              src={image_url}
+              src={typeof image_url === 'string' ? image_url.trim() : image_url}
               alt={nodeData.node_label}
               style={{
                 maxWidth: '100%',
@@ -74,42 +91,42 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
                 e.target.style.display = 'none';
               }}
             />
-            {image_attribution && (
+            {hasValue(image_attribution) && (
               <Typography
                 variant="caption"
                 display="block"
                 sx={{ mt: 1, color: 'text.secondary', fontSize: '0.75rem' }}
               >
-                {image_attribution}
+                {typeof image_attribution === 'string' ? image_attribution.trim() : image_attribution}
               </Typography>
             )}
           </Box>
         )}
 
         {/* Geologic Age */}
-        {geologic_age && (
+        {hasValue(geologic_age) && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" color="primary" gutterBottom>
               Geologic Age
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {geologic_age}
+              {typeof geologic_age === 'string' ? geologic_age.trim() : geologic_age}
             </Typography>
           </Box>
         )}
 
         {/* Wikipedia Content */}
-        {wikipedia_text && (
+        {hasValue(wikipedia_text) && (
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" color="primary" gutterBottom>
               Description
             </Typography>
             <Typography variant="body2" paragraph sx={{ lineHeight: 1.6 }}>
-              {wikipedia_text}
+              {typeof wikipedia_text === 'string' ? wikipedia_text.trim() : wikipedia_text}
             </Typography>
-            {wikipedia_url && (
+            {hasValue(wikipedia_url) && (
               <Link
-                href={wikipedia_url}
+                href={typeof wikipedia_url === 'string' ? wikipedia_url.trim() : wikipedia_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{ color: 'primary.main', textDecoration: 'none' }}
