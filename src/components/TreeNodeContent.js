@@ -130,30 +130,26 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
       : null;
     const hasSilhouette = Boolean(phylopicImage || fallbackPhylopicUrl);
 
-    const containerSx = {
-      width: 24,
-      height: 24,
-      borderRadius: '50%',
-      border: '2px solid white',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-      backgroundColor: hasSilhouette ? 'transparent' : defaultColor,
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    };
-
     if (hasSilhouette) {
       return (
-        <Box sx={containerSx} aria-label={`${node_label} silhouette`}>
+        <Box
+          sx={{
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          aria-label={`${node_label} silhouette`}
+        >
           <Box
             component="img"
             src={phylopicImage || fallbackPhylopicUrl}
             alt=""
             loading="lazy"
             sx={{
-              width: '100%',
-              height: '100%',
+              maxWidth: '100%',
+              maxHeight: '100%',
               display: 'block',
               objectFit: 'contain'
             }}
