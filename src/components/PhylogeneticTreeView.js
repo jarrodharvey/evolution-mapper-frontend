@@ -40,11 +40,16 @@ const treeTheme = createTheme({
   },
 });
 
-const PhylogeneticTreeView = ({ treeData, legendType }) => {
+const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) => {
   const [selectedInfoNode, setSelectedInfoNode] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState([]);
   const animationTimeoutsRef = useRef([]);
+  const expandedItemsRef = useRef([]);
+
+  useEffect(() => {
+    expandedItemsRef.current = expandedItems;
+  }, [expandedItems]);
 
   const handleInfoClick = useCallback((nodeData) => {
     setSelectedInfoNode(nodeData);
@@ -213,6 +218,34 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
       clearAnimationTimeouts();
     };
   }, [expansionSequence, clearAnimationTimeouts]);
+
+  // Collapse expanded ancestors one-by-one so the tree "shrinks" back to the common ancestor
+  useEffect(() => {
+    if (!collapseToRootSignal) {
+      return undefined;
+    }
+
+    if (!expandedItemsRef.current.length) {
+      return undefined;
+    }
+
+    clearAnimationTimeouts();
+
+    const COLLAPSE_DELAY_MS = 600;
+    const collapseOrder = [...expandedItemsRef.current].reverse();
+
+    const timeoutIds = collapseOrder.map((itemId, index) => {
+      return setTimeout(() => {
+        setExpandedItems((prevExpanded) => prevExpanded.filter((id) => id !== itemId));
+      }, index * COLLAPSE_DELAY_MS);
+    });
+
+    animationTimeoutsRef.current = timeoutIds;
+
+    return () => {
+      timeoutIds.forEach(clearTimeout);
+    };
+  }, [collapseToRootSignal, clearAnimationTimeouts]);
 
   const handleExpandedItemsChange = useCallback((event, itemIds) => {
     stopAnimation();

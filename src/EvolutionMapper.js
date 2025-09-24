@@ -28,6 +28,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [legendType, setLegendType] = useState(null);
   const [expansionSpeed] = useState(3000);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [mobileCollapseTrigger, setMobileCollapseTrigger] = useState(0);
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const [isMobileDevice] = useState(isMobile()); // Detect mobile once on component mount
@@ -84,7 +85,11 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setTreeHTML(null);
-    setTreeJSON(null);
+    if (isMobileDevice) {
+      setMobileCollapseTrigger(Date.now());
+    } else {
+      setTreeJSON(null);
+    }
     setCountdown(null);
 
     try {
@@ -280,7 +285,11 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
     setTreeHTML(null);
-    setTreeJSON(null);
+    if (isMobileDevice) {
+      setMobileCollapseTrigger(Date.now());
+    } else {
+      setTreeJSON(null);
+    }
     setCountdown(null);
 
     try {
@@ -858,6 +867,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   <PhylogeneticTreeView
                     treeData={treeJSON}
                     legendType={legendType}
+                    collapseToRootSignal={mobileCollapseTrigger}
                   />
                 ) : treeError ? (
                   <ErrorDisplay
