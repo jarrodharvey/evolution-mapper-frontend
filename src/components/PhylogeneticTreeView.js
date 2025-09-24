@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Box, ThemeProvider, createTheme } from '@mui/material';
 import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import TreeNodeItem from './TreeNodeItem';
@@ -43,6 +43,8 @@ const treeTheme = createTheme({
 const PhylogeneticTreeView = ({ treeData, legendType }) => {
   const [selectedInfoNode, setSelectedInfoNode] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState([]);
+  const animationTimeoutsRef = useRef([]);
 
   const handleInfoClick = useCallback((nodeData) => {
     setSelectedInfoNode(nodeData);
@@ -147,6 +149,78 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
     return items;
   }, [treeData, transformTreeNode]);
 
+  const expansionSequence = useMemo(() => {
+    if (!treeItems || treeItems.length === 0) {
+      return [];
+    }
+
+    const sequence = [];
+    const queue = [...treeItems];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (!current) {
+        continue;
+      }
+
+      const children = Array.isArray(current.children) ? current.children : [];
+      if (children.length > 0) {
+        sequence.push(current.id);
+        queue.push(...children);
+      }
+    }
+
+    return sequence;
+  }, [treeItems]);
+
+  const clearAnimationTimeouts = useCallback(() => {
+    animationTimeoutsRef.current.forEach(clearTimeout);
+    animationTimeoutsRef.current = [];
+  }, []);
+
+  const stopAnimation = useCallback(() => {
+    clearAnimationTimeouts();
+  }, [clearAnimationTimeouts]);
+
+  // Gradually expand ancestor nodes so the mobile tree appears to "grow" level by level
+  useEffect(() => {
+    clearAnimationTimeouts();
+
+    if (!expansionSequence.length) {
+      setExpandedItems([]);
+      return undefined;
+    }
+
+    const INITIAL_DELAY_MS = 800;
+    const EXPANSION_DELAY_MS = 1200;
+
+    setExpandedItems([]);
+
+    const timeoutIds = expansionSequence.map((itemId, index) => {
+      return setTimeout(() => {
+        setExpandedItems((prevExpanded) => {
+          if (prevExpanded.includes(itemId)) {
+            return prevExpanded;
+          }
+          return [...prevExpanded, itemId];
+        });
+      }, INITIAL_DELAY_MS + index * EXPANSION_DELAY_MS);
+    });
+
+    animationTimeoutsRef.current = timeoutIds;
+
+    return () => {
+      clearAnimationTimeouts();
+    };
+  }, [expansionSequence, clearAnimationTimeouts]);
+
+  const handleExpandedItemsChange = useCallback((event, itemIds) => {
+    stopAnimation();
+    if (Array.isArray(itemIds)) {
+      setExpandedItems(itemIds);
+    }
+  }, [stopAnimation]);
+
   const handleInfoPanelClose = () => {
     setInfoPanelOpen(false);
     setSelectedInfoNode(null);
@@ -183,7 +257,8 @@ const PhylogeneticTreeView = ({ treeData, legendType }) => {
       >
         <RichTreeView
           items={treeItems}
-          defaultExpandedItems={[treeItems[0]?.id]}
+          expandedItems={expandedItems}
+          onExpandedItemsChange={handleExpandedItemsChange}
           itemChildrenIndentation={24}
           slots={{
             item: TreeNodeItem
