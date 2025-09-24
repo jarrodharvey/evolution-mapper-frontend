@@ -182,10 +182,25 @@ const TreeNodeContent = ({ nodeData, fallbackLabel, onInfoClick }) => {
 
   // Format label with age information
   const getDisplayLabel = () => {
-    if (has_age && age_info && age_info !== 'age unavailable' && age_info !== 'present') {
-      return `${node_label} (${age_info})`;
+    const normalizedLabel = typeof node_label === 'string' ? node_label.trim() : '';
+    const normalizedAge = typeof age_info === 'string' ? age_info.trim() : '';
+
+    const hasValidAge = Boolean(
+      has_age &&
+      normalizedAge &&
+      normalizedAge !== 'age unavailable' &&
+      normalizedAge !== 'present'
+    );
+
+    if (hasValidAge) {
+      const labelContainsAge = normalizedLabel.toLowerCase().includes(normalizedAge.toLowerCase());
+      if (labelContainsAge) {
+        return normalizedLabel;
+      }
+      return `${normalizedLabel} (${normalizedAge})`;
     }
-    return node_label;
+
+    return normalizedLabel || (fallbackLabel || 'Unknown');
   };
 
   // Determine if info button should be shown
