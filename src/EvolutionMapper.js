@@ -666,6 +666,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   defaultOptions={false}
                   loadOptions={loadSpecies}
                   value={selectedSpecies}
+                  blurInputOnSelect={false}
                   onChange={(species) => {
                     setSelectedSpecies(species);
                     setTreeError(null); // Clear tree error when species change
@@ -763,6 +764,7 @@ function EvolutionMapper({ onTreeViewChange }) {
               defaultOptions={false}
               loadOptions={loadSpecies}
               value={selectedSpecies}
+              blurInputOnSelect={false}
               onChange={(species) => {
                 setSelectedSpecies(species);
                 setTreeError(null); // Clear tree error when species change
