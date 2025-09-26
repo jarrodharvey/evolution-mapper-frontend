@@ -1,10 +1,41 @@
+const resolveBackendUrl = () => {
+  if (process.env.REACT_APP_BACKEND_URL) {
+    return process.env.REACT_APP_BACKEND_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    const devServerPort = window.location.port;
+    const shouldUseProxy =
+      devServerPort &&
+      devServerPort.startsWith('3') &&
+      process.env.REACT_APP_USE_DEV_PROXY !== 'false';
+
+    if (shouldUseProxy) {
+      // Let the CRA dev server proxy handle backend requests so other devices
+      // don't need direct access to the backend port.
+      return '';
+    }
+
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const host = window.location.hostname || 'localhost';
+    const port = process.env.REACT_APP_BACKEND_PORT || '8000';
+
+    return `${protocol}//${host}:${port}`;
+  }
+
+  return 'http://localhost:8000';
+};
+
+const resolvedApiKey = process.env.REACT_APP_API_KEY || 'demo-key-12345';
+const resolvedBaseUrl = resolveBackendUrl();
+
 export const API_CONFIG = {
-  BASE_URL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000',
-  API_KEY: process.env.REACT_APP_API_KEY || 'demo-key-12345',
+  BASE_URL: resolvedBaseUrl,
+  API_KEY: resolvedApiKey,
   
   DEFAULT_HEADERS: {
     'Content-Type': 'application/json',
-    'X-API-Key': process.env.REACT_APP_API_KEY || 'demo-key-12345'
+    'X-API-Key': resolvedApiKey
   },
   
   TIMEOUT: {
