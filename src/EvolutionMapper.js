@@ -4,7 +4,6 @@ import { components } from 'react-select';
 import { apiRequest } from './api-config';
 import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
-import ProgressChecklist from './ProgressChecklist';
 import ErrorDisplay from './ErrorDisplay';
 import PhylogeneticTreeView from './components/PhylogeneticTreeView';
 import { isMobile } from './utils/mobileDetection';
@@ -23,7 +22,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [droppedSpecies, setDroppedSpecies] = useState([]);
   const [unavailableSpecies, setUnavailableSpecies] = useState([]);
   const [progressData, setProgressData] = useState(null);
-  const [showProgressChecklist, setShowProgressChecklist] = useState(false);
+  const [showProgressTracker, setShowProgressTracker] = useState(false);
   const [showDragHint, setShowDragHint] = useState(false);
   const [legendType, setLegendType] = useState(null);
   const [expansionSpeed] = useState(3000);
@@ -158,7 +157,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       // Get progress token first
       setLoadingPhase('Preparing tree generation...');
       const token = await fetchProgressToken();
-      setShowProgressChecklist(true);
+      setShowProgressTracker(true);
       
       // Start monitoring progress
       startProgressMonitoring(token);
@@ -252,7 +251,7 @@ function EvolutionMapper({ onTreeViewChange }) {
     } finally {
       // Stop progress monitoring after a short delay to show completion
       setTimeout(() => {
-        setShowProgressChecklist(false);
+        setShowProgressTracker(false);
         setProgressData(null);
         stopProgressMonitoring();
       }, 3000);
@@ -637,8 +636,20 @@ function EvolutionMapper({ onTreeViewChange }) {
     setShowFloatingControls(!showFloatingControls);
   };
 
+  // Prevent lingering overlays once a tree (or error) is available
+  const isTreeReady = isMobileDevice ? Boolean(treeJSON) : Boolean(treeHTML);
+  const shouldShowProgressOverlay = (loading || showProgressTracker) && !isTreeReady && !treeError;
+
+  const treeDisplayReady = isTreeReady || Boolean(treeError);
+
+  const containerClasses = [
+    'evolution-mapper-container',
+    showFloatingControls ? 'floating-mode' : null,
+    treeDisplayReady ? 'tree-ready' : null,
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`evolution-mapper-container ${showFloatingControls ? 'floating-mode' : ''}`}>
+    <div className={containerClasses}>
       {!showFloatingControls && (
         <header className="App-header">
           <h1>Evolution Mapper</h1>
@@ -746,10 +757,10 @@ function EvolutionMapper({ onTreeViewChange }) {
         </div>
       )}
 
-      <main 
+      <main
         className={`App-main ${showFloatingControls ? 'floating-mode' : ''}`}
         style={showFloatingControls ? {
-          paddingTop: isToolbarCollapsed ? '45px' : '60px'
+          paddingTop: isToolbarCollapsed ? '50px' : '70px'
         } : {}}
       >
         {!showFloatingControls && (
@@ -827,18 +838,13 @@ function EvolutionMapper({ onTreeViewChange }) {
             )}
 
             
-            {showProgressChecklist && progressData ? (
-              <ProgressChecklist 
-                show={showProgressChecklist}
-                progressData={progressData}
-              />
-            ) : loading && !treeHTML ? (
+            {shouldShowProgressOverlay ? (
               <div style={{ position: 'relative', minHeight: '200px' }}>
                 <ProgressOverlay 
-                  show={loading && !treeHTML}
+                  show={shouldShowProgressOverlay}
                   message={loadingPhase}
-                  showProgressBar={loadingPhase.includes('Generating')}
                   countdown={countdown}
+                  progressData={progressData}
                 />
               </div>
             ) : null}
@@ -905,25 +911,15 @@ function EvolutionMapper({ onTreeViewChange }) {
                   />
                 ) : null
               )}
-              {showProgressChecklist && progressData && showFloatingControls ? (
-                <div style={{ marginTop: '80px' }}>
-                  <ProgressChecklist 
-                    show={showProgressChecklist}
-                    progressData={progressData}
-                  />
-                </div>
-              ) : showProgressChecklist && progressData ? (
-                <ProgressChecklist 
-                  show={showProgressChecklist}
+              {shouldShowProgressOverlay ? (
+                <ProgressOverlay 
+                  show={shouldShowProgressOverlay}
+                  message={loadingPhase}
+                  countdown={countdown}
                   progressData={progressData}
                 />
               ) : (
-                <ProgressOverlay 
-                  show={loading}
-                  message={loadingPhase}
-                  showProgressBar={loadingPhase.includes('Generating')}
-                  countdown={countdown}
-                />
+                null
               )}
               <Legend
                 legendType={legendType}

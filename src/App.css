@@ -49,26 +49,25 @@
   box-shadow: none;
   max-width: none;
   margin: 0;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-top: 60px; /* Account for compact toolbar */
+  padding-top: 70px; /* Account for toolbar + extra breathing room */
   flex: 1;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden; /* Prevent any scrolling interference */
 }
 
 .evolution-mapper-container.floating-mode {
   max-width: none;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
-  height: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow: hidden;
 }
 
 /* Hide navigation when in tree view (floating mode) */
@@ -471,7 +470,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
   overflow: hidden;
 }
 
@@ -479,15 +478,23 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .tree-display.floating-mode .tree-iframe {
   flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .tree-container {
   position: relative;
+}
+
+.evolution-mapper-container.tree-ready .progress-overlay {
+  display: none !important;
 }
 
 .tree-display h2 {
