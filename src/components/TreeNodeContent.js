@@ -23,7 +23,6 @@ const TreeNodeContent = ({
     color,
     node_shape,
     phylopic_uuid,
-    phylopic_url,
     has_age,
     age_info,
     node_type
@@ -51,11 +50,7 @@ const TreeNodeContent = ({
   });
   const [refreshCounter, setRefreshCounter] = useState(0);
   const lastRefreshTokenRef = useRef(null);
-  const [imageError, setImageError] = useState(false);
-
-  const fallbackPhylopicUrl = !shouldRenderCircle && typeof phylopic_url === 'string' && phylopic_url.trim()
-    ? phylopic_url.trim()
-    : null;
+  const [fetchError, setFetchError] = useState(null);
 
   const resolvedRefreshToken = phylopicRefreshEvent?.token || 0;
   const refreshTargets = Array.isArray(phylopicRefreshEvent?.targets) ? phylopicRefreshEvent.targets : [];
@@ -82,20 +77,20 @@ const TreeNodeContent = ({
     }
 
     setPhylopicImage(null);
-    setImageError(false);
+    setFetchError(null);
     setRefreshCounter((previous) => previous + 1);
   }, [cacheKey, resolvedRefreshToken, shouldProcessRefresh]);
 
   useEffect(() => {
     if (!phylopicUuid || !cacheKey) {
       setPhylopicImage(null);
-      setImageError(false);
+      setFetchError(null);
       return undefined;
     }
 
     if (phylopicCache.has(cacheKey)) {
       setPhylopicImage(phylopicCache.get(cacheKey));
-      setImageError(false);
+      setFetchError(null);
       return undefined;
     }
 
@@ -146,10 +141,10 @@ const TreeNodeContent = ({
         }
 
         if (!rawImage) {
-          phylopicCache.set(cacheKey, null);
           if (isActive) {
+            const error = new Error(`PhyloPic response missing image data for ${node_label} (${phylopicUuid}).`);
             setPhylopicImage(null);
-            setImageError(true);
+            setFetchError(error);
           }
           return;
         }
@@ -161,6 +156,7 @@ const TreeNodeContent = ({
         phylopicCache.set(cacheKey, formattedImage);
 
         if (isActive) {
+          setFetchError(null);
           setPhylopicImage(formattedImage);
         }
       } catch (error) {
@@ -169,10 +165,10 @@ const TreeNodeContent = ({
         }
 
         if (error?.status === 404) {
-          phylopicCache.set(cacheKey, null);
           if (isActive) {
+            const notFoundError = new Error(`PhyloPic silhouette not found for ${node_label} (${phylopicUuid}).`);
             setPhylopicImage(null);
-            setImageError(true);
+            setFetchError(notFoundError);
           }
           return;
         }
@@ -187,14 +183,17 @@ const TreeNodeContent = ({
           return;
         }
 
-        phylopicCache.set(cacheKey, null);
         if (isActive) {
+          const finalError = error instanceof Error
+            ? error
+            : new Error(`Failed to load PhyloPic for ${node_label} (${phylopicUuid}).`);
           setPhylopicImage(null);
-          setImageError(true);
+          setFetchError(finalError);
         }
       }
     };
 
+    setFetchError(null);
     fetchPhylopic();
 
     return () => {
@@ -204,14 +203,14 @@ const TreeNodeContent = ({
         clearTimeout(retryTimerId);
       }
     };
-  }, [cacheKey, defaultColor, phylopicUuid, refreshCounter]);
+  }, [cacheKey, defaultColor, node_label, phylopicUuid, refreshCounter]);
 
   useEffect(() => {
     if (!onPhylopicStatusChange || !itemId) {
       return undefined;
     }
 
-    const hasSilhouette = Boolean((phylopicImage || fallbackPhylopicUrl) && !imageError);
+    const hasSilhouette = Boolean(phylopicImage);
 
     onPhylopicStatusChange(itemId, {
       phylopicUuid,
@@ -222,11 +221,15 @@ const TreeNodeContent = ({
     return () => {
       onPhylopicStatusChange(itemId, null);
     };
-  }, [defaultColor, fallbackPhylopicUrl, imageError, itemId, onPhylopicStatusChange, phylopicImage, phylopicUuid]);
+  }, [defaultColor, itemId, onPhylopicStatusChange, phylopicImage, phylopicUuid]);
 
   // Determine icon style and type
   const getNodeIcon = () => {
-    if (!imageError && (fallbackPhylopicUrl || phylopicImage)) {
+    if (fetchError && !shouldRenderCircle && phylopicUuid) {
+      throw fetchError;
+    }
+
+    if (phylopicImage) {
       return (
         <Box
           sx={{
@@ -240,7 +243,7 @@ const TreeNodeContent = ({
         >
           <Box
             component="img"
-            src={phylopicImage || fallbackPhylopicUrl}
+            src={phylopicImage}
             alt=""
             loading="lazy"
             sx={{
@@ -250,21 +253,40 @@ const TreeNodeContent = ({
               objectFit: 'contain'
             }}
             onError={() => {
-              setImageError(true);
               setPhylopicImage(null);
               if (cacheKey) {
-                phylopicCache.set(cacheKey, null);
+                phylopicCache.delete(cacheKey);
               }
-            }}
-            onLoad={() => {
-              setImageError(false);
+              setFetchError(new Error(`Rendered PhyloPic image failed to load for ${node_label} (${phylopicUuid}).`));
             }}
           />
         </Box>
       );
     }
 
-    // Default to colored circle
+    if (!shouldRenderCircle && phylopicUuid) {
+      return (
+        <Box
+          sx={{
+            width: 24,
+            height: 24,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 10,
+            fontWeight: 600,
+            color: '#d32f2f',
+            border: '1px solid #d32f2f',
+            borderRadius: '4px',
+            padding: '2px'
+          }}
+        >
+          Loading...
+        </Box>
+      );
+    }
+
+    // Default to colored circle for genuine circle nodes
     return (
       <Box
         sx={{
