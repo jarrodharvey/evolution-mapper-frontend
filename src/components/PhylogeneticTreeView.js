@@ -40,7 +40,7 @@ const treeTheme = createTheme({
   },
 });
 
-const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) => {
+const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onExpandedItemsChange }) => {
   const [selectedInfoNode, setSelectedInfoNode] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState([]);
@@ -53,7 +53,11 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal }) =>
 
   useEffect(() => {
     expandedItemsRef.current = expandedItems;
-  }, [expandedItems]);
+    // Report expanded items count to parent component
+    if (onExpandedItemsChange) {
+      onExpandedItemsChange(expandedItems.length);
+    }
+  }, [expandedItems, onExpandedItemsChange]);
 
   const handleInfoClick = useCallback((nodeData) => {
     setSelectedInfoNode(nodeData);

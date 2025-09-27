@@ -1,5 +1,5 @@
 .progress-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10001;
   backdrop-filter: blur(2px);
 }
 
@@ -22,22 +22,40 @@
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(0, 0, 0, 0.08);
-  max-width: 400px;
+  max-width: 460px;
   text-align: center;
 }
 
-.progress-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e3e3e3;
-  border-top: 3px solid #2c3e50;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.progress-wheel-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.progress-active-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.progress-active-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.progress-step-marker {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
 
 .progress-message {
@@ -52,35 +70,6 @@
   font-weight: 600;
 }
 
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: #e3e3e3;
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: #2c3e50;
-  animation: indeterminate 1.5s infinite linear;
-  border-radius: 3px;
-}
-
-@keyframes indeterminate {
-  0% { 
-    transform: translateX(-100%);
-    width: 50%;
-  }
-  50% {
-    width: 80%;
-  }
-  100% { 
-    transform: translateX(100%);
-    width: 50%;
-  }
-}
-
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .progress-content {
@@ -88,13 +77,26 @@
     padding: 24px;
     max-width: calc(100vw - 40px);
   }
-  
+  .progress-wheel-wrapper {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .progress-active-steps {
+    align-items: center;
+    text-align: center;
+  }
   .progress-message {
     font-size: 14px;
   }
-  
-  .progress-spinner {
-    width: 28px;
-    height: 28px;
+}
+
+/* Mobile tree view specific content adjustments */
+@media (max-width: 768px) {
+  .floating-mode .progress-content {
+    margin: 20px;
+    padding: 20px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
   }
 }

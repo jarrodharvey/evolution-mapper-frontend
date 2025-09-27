@@ -6,7 +6,7 @@ import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
 import ErrorDisplay from './ErrorDisplay';
 import PhylogeneticTreeView from './components/PhylogeneticTreeView';
-import { isMobile } from './utils/mobileDetection';
+import { isMobile, isMobileViewport } from './utils/mobileDetection';
 
 function EvolutionMapper({ onTreeViewChange }) {
   const [selectedSpecies, setSelectedSpecies] = useState([]);
@@ -24,6 +24,8 @@ function EvolutionMapper({ onTreeViewChange }) {
   const [progressData, setProgressData] = useState(null);
   const [showProgressTracker, setShowProgressTracker] = useState(false);
   const [showDragHint, setShowDragHint] = useState(false);
+  const [allowProgressOverlay, setAllowProgressOverlay] = useState(true);
+  const [expandedItemsCount, setExpandedItemsCount] = useState(0);
   const [legendType, setLegendType] = useState(null);
   const [expansionSpeed] = useState(3000);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
@@ -31,6 +33,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const iframeRef = useRef(null);
   const progressIntervalRef = useRef(null);
   const [isMobileDevice] = useState(isMobile()); // Detect mobile once on component mount
+  const isCurrentlyMobileViewport = isMobileViewport(); // Dynamic viewport check
 
   const loadSpecies = async (inputValue) => {
     if (!inputValue || inputValue.length < 2) return [];
@@ -83,11 +86,35 @@ function EvolutionMapper({ onTreeViewChange }) {
     setLoadingPhase('Preparing tree generation...');
     setError(null);
     setTreeError(null);
-    setTreeHTML(null);
-    if (isMobileDevice) {
+
+    if (isMobileDevice && treeJSON) {
+      // Only delay progress overlay if we already have a tree (collapse animation will play)
+      setAllowProgressOverlay(false);
       setMobileCollapseTrigger(Date.now());
+      // Calculate collapse animation duration: expandedItemsCount * 600ms + 500ms buffer
+      const collapseAnimationDuration = (expandedItemsCount * 600) + 500;
+      setTimeout(() => {
+        setAllowProgressOverlay(true);
+      }, collapseAnimationDuration);
+    } else if (isMobileDevice) {
+      // First time generating mobile tree - no collapse animation, show progress overlay immediately
+      setAllowProgressOverlay(true);
+      setMobileCollapseTrigger(Date.now());
+      setTreeHTML(null);
     } else {
       setTreeJSON(null);
+      // For desktop mode, give a short delay to let tree collapse animation play if there's an existing tree
+      if (treeHTML) {
+        setAllowProgressOverlay(false);
+        // Clear the iframe after collapse animation completes and show progress overlay
+        setTimeout(() => {
+          setTreeHTML(null);
+          setAllowProgressOverlay(true);
+        }, 2000);
+      } else {
+        setTreeHTML(null);
+        setAllowProgressOverlay(true);
+      }
     }
     setCountdown(null);
 
@@ -283,11 +310,35 @@ function EvolutionMapper({ onTreeViewChange }) {
     setLoadingPhase('Selecting random species...');
     setError(null);
     setTreeError(null);
-    setTreeHTML(null);
-    if (isMobileDevice) {
+
+    if (isMobileDevice && treeJSON) {
+      // Only delay progress overlay if we already have a tree (collapse animation will play)
+      setAllowProgressOverlay(false);
       setMobileCollapseTrigger(Date.now());
+      // Calculate collapse animation duration: expandedItemsCount * 600ms + 500ms buffer
+      const collapseAnimationDuration = (expandedItemsCount * 600) + 500;
+      setTimeout(() => {
+        setAllowProgressOverlay(true);
+      }, collapseAnimationDuration);
+    } else if (isMobileDevice) {
+      // First time generating mobile tree - no collapse animation, show progress overlay immediately
+      setAllowProgressOverlay(true);
+      setMobileCollapseTrigger(Date.now());
+      setTreeHTML(null);
     } else {
       setTreeJSON(null);
+      // For desktop mode, give a short delay to let tree collapse animation play if there's an existing tree
+      if (treeHTML) {
+        setAllowProgressOverlay(false);
+        // Clear the iframe after collapse animation completes and show progress overlay
+        setTimeout(() => {
+          setTreeHTML(null);
+          setAllowProgressOverlay(true);
+        }, 2000);
+      } else {
+        setTreeHTML(null);
+        setAllowProgressOverlay(true);
+      }
     }
     setCountdown(null);
 
@@ -636,9 +687,15 @@ function EvolutionMapper({ onTreeViewChange }) {
     setShowFloatingControls(!showFloatingControls);
   };
 
+  const handleExpandedItemsChange = (count) => {
+    setExpandedItemsCount(count);
+  };
+
   // Prevent lingering overlays once a tree (or error) is available
-  const isTreeReady = isMobileDevice ? Boolean(treeJSON) : Boolean(treeHTML);
-  const shouldShowProgressOverlay = (loading || showProgressTracker) && !isTreeReady && !treeError;
+  const shouldUseMobileTreeView = isMobileDevice || isCurrentlyMobileViewport;
+  const isTreeReady = shouldUseMobileTreeView ? Boolean(treeJSON) : Boolean(treeHTML);
+  const shouldShowProgressOverlay = (loading || showProgressTracker) && !treeError && allowProgressOverlay;
+
 
   const treeDisplayReady = isTreeReady || Boolean(treeError);
 
@@ -650,6 +707,16 @@ function EvolutionMapper({ onTreeViewChange }) {
 
   return (
     <div className={containerClasses}>
+      {/* Global Progress Overlay - renders at top level for all modes */}
+      {shouldShowProgressOverlay && (
+        <ProgressOverlay
+          show={shouldShowProgressOverlay}
+          message={loadingPhase}
+          countdown={countdown}
+          progressData={progressData}
+        />
+      )}
+
       {!showFloatingControls && (
         <header className="App-header">
           <h1>Evolution Mapper</h1>
@@ -837,17 +904,6 @@ function EvolutionMapper({ onTreeViewChange }) {
               </div>
             )}
 
-            
-            {shouldShowProgressOverlay ? (
-              <div style={{ position: 'relative', minHeight: '200px' }}>
-                <ProgressOverlay 
-                  show={shouldShowProgressOverlay}
-                  message={loadingPhase}
-                  countdown={countdown}
-                  progressData={progressData}
-                />
-              </div>
-            ) : null}
           </>
         )}
 
@@ -861,6 +917,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 </button>
               </div>
             )}
+
 
             <div className="tree-container" style={{ position: 'relative' }}>
               {showDragHint && (
@@ -876,6 +933,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                     treeData={treeJSON}
                     legendType={legendType}
                     collapseToRootSignal={mobileCollapseTrigger}
+                    onExpandedItemsChange={handleExpandedItemsChange}
                   />
                 ) : treeError ? (
                   <ErrorDisplay
@@ -910,16 +968,6 @@ function EvolutionMapper({ onTreeViewChange }) {
                     showRetryButton={true}
                   />
                 ) : null
-              )}
-              {shouldShowProgressOverlay ? (
-                <ProgressOverlay 
-                  show={shouldShowProgressOverlay}
-                  message={loadingPhase}
-                  countdown={countdown}
-                  progressData={progressData}
-                />
-              ) : (
-                null
               )}
               <Legend
                 legendType={legendType}
