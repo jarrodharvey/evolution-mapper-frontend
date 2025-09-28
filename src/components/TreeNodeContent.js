@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Box, Typography, IconButton } from '@mui/material';
+import { Box, Typography, IconButton, CircularProgress } from '@mui/material';
 import { Info as InfoIcon } from '@mui/icons-material';
 import { API_CONFIG } from '../api-config';
 
@@ -272,16 +272,10 @@ const TreeNodeContent = ({
             height: 24,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 10,
-            fontWeight: 600,
-            color: '#d32f2f',
-            border: '1px solid #d32f2f',
-            borderRadius: '4px',
-            padding: '2px'
+            justifyContent: 'center'
           }}
         >
-          Loading...
+          <CircularProgress size={16} thickness={4} />
         </Box>
       );
     }
