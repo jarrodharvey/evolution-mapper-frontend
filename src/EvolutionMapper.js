@@ -672,6 +672,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       margin: '0px',
       paddingTop: '0px',
       paddingBottom: '0px',
+      fontSize: '16px', // Prevent zoom on iOS devices
     }),
   });
 
