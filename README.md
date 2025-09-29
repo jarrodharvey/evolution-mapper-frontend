@@ -69,10 +69,17 @@ A React application that visualizes how species evolved by creating interactive 
 ### Testing
 
 For testing API endpoints that return large responses (like `/api/full-tree-dated`):
-1. Start the frontend: `npm start`
-2. Navigate to `http://localhost:3000`
-3. Use browser console to input species: `as("Human (Homo sapiens), Chicken (Gallus gallus)")`
-4. Screenshot the results for verification
+1. Restart the backend: `sh/restart_backend_server.sh`
+2. Start the frontend: `npm start`
+3. Navigate to `http://localhost:3000`
+4. Use browser console to input species: `as("Human (Homo sapiens), Chicken (Gallus gallus)")`
+5. Screenshot the results for verification
+
+### Console Commands
+
+The application provides helpful console commands for testing:
+- `cs()` - Copy selected species to clipboard
+- `as("species1 (Scientific1), species2 (Scientific2)")` - Add species by scientific name
 
 ### Backend Integration
 
@@ -88,6 +95,7 @@ The app connects to an R Plumber backend serving phylogenetic data:
 - **API Layer**: Centralized in `src/api-config.js` with error handling
 - **Testing**: Playwright for E2E tests, Jest for unit tests
 - **Backend**: R Plumber API serving 90k+ species data
+- **Mobile**: Responsive design with Material-UI TreeView for mobile, iframe for desktop
 
 ## Environment Variables
 
@@ -95,10 +103,12 @@ The app connects to an R Plumber backend serving phylogenetic data:
 |----------|-------------|---------|
 | `REACT_APP_API_KEY` | API key for backend authentication | `demo-key-12345` |
 | `REACT_APP_BACKEND_URL` | Backend API URL | `http://localhost:8000` |
+| `REACT_APP_BACKEND_PORT` | Backend port | `8000` |
+| `REACT_APP_USE_DEV_PROXY` | Use development proxy | `true` |
 
 ## Technologies Used
 
-- **Frontend**: React 18, React Router v7, React Select
+- **Frontend**: React 18, React Router v7, React Select, Material-UI
 - **Testing**: Playwright, Jest, React Testing Library
 - **Backend**: R Plumber API
 - **Build**: Create React App
