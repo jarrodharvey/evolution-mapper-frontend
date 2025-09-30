@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiRequest } from './api-config';
+import { isMobile } from './utils/mobileDetection';
 
 const AgeGradientBar = ({ ageItems }) => {
   // Sort age items by estimated age (oldest first)
@@ -43,7 +44,13 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
     const fetchLegend = async () => {
       try {
         setLoading(true);
-        const url = legendType ? `/api/legend?type=${encodeURIComponent(legendType)}` : '/api/legend';
+        let url = legendType ? `/api/legend?type=${encodeURIComponent(legendType)}` : '/api/legend';
+
+        // Add include_common_ancestor=false for mobile view
+        if (isMobile()) {
+          url += (url.includes('?') ? '&' : '?') + 'include_common_ancestor=false';
+        }
+
         const data = await apiRequest(url);
         if (data.success && data.legend) {
           // Store the actual type returned by the API
