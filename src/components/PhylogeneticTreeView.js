@@ -377,6 +377,7 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onEx
           overflowY: 'auto',
           WebkitOverflowScrolling: 'touch',
           padding: 2,
+          paddingBottom: 4,
           '& .MuiTreeView-root': {
             minHeight: '100%',
           }
