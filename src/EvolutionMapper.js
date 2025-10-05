@@ -192,8 +192,8 @@ function EvolutionMapper({ onTreeViewChange }) {
       // First, try to get the full tree with dates from the unified endpoint
       setLoadingPhase('Generating phylogenetic tree with ancestral data...');
 
-      if (isMobileDevice) {
-        // Collapse UI chrome to maximize viewport on small screens during tree fetches
+      if (isMobileDevice || !showFloatingControls) {
+        // Collapse UI chrome when entering tree view; always collapse on mobile to maximize viewport
         setIsToolbarCollapsed(true);
         setLegendCollapsed(true);
       }
