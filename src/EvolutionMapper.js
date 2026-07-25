@@ -539,6 +539,9 @@ function EvolutionMapper({ onTreeViewChange }) {
 
 
   const isValidSelection = selectedSpecies.length >= 3 && selectedSpecies.length <= 20;
+  const shouldShowInitialRandomButton = !showFloatingControls && (
+    !(isMobileDevice || isCurrentlyMobileViewport) || selectedSpecies.length === 0
+  );
 
   // Custom component for multi-value labels with dynamic clock formatting
   const MultiValueLabel = (props) => {
@@ -876,13 +879,15 @@ function EvolutionMapper({ onTreeViewChange }) {
 
         {!showFloatingControls && (
           <div className="action-buttons">
-            <button 
-              onClick={pickRandomSpecies}
-              disabled={loading}
-              className="random-button"
-            >
-              {loading ? 'Loading...' : 'Pick species for me'}
-            </button>
+            {shouldShowInitialRandomButton && (
+              <button 
+                onClick={pickRandomSpecies}
+                disabled={loading}
+                className="random-button"
+              >
+                {loading ? 'Loading...' : 'Pick species for me'}
+              </button>
+            )}
             
             <button 
               onClick={generateTree}

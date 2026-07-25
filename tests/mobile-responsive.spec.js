@@ -1,5 +1,30 @@
 const { test, expect } = require('@playwright/test');
 
+async function mockSpeciesSearch(page) {
+  await page.route('**/api/species?**', async route => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        species: [
+          {
+            common: 'Human',
+            scientific: 'Homo sapiens',
+            has_datelife: true
+          }
+        ]
+      })
+    });
+  });
+}
+
+async function selectHumanSpecies(page) {
+  const searchInput = page.locator('.species-select input');
+  await searchInput.click();
+  await searchInput.fill('human');
+  await page.getByRole('option', { name: /Human \(Homo sapiens\)/ }).click();
+  await expect(page.locator('.selection-info')).toContainText('Selected: 1 species');
+}
+
 test.describe('Mobile Responsive Evolution Mapper', () => {
   test('should detect desktop as non-mobile', async ({ page }) => {
     // Set desktop viewport
@@ -74,5 +99,42 @@ test.describe('Mobile Responsive Evolution Mapper', () => {
     expect(viewportWidth).toBeLessThanOrEqual(768);
 
     await context.close();
+  });
+
+  test('should hide initial random species button on mobile after species selection', async ({ browser }) => {
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+      viewport: { width: 375, height: 667 },
+      hasTouch: true
+    });
+
+    const page = await context.newPage();
+    await mockSpeciesSearch(page);
+    await page.goto('http://localhost:3000');
+    await page.waitForSelector('.evolution-mapper-container');
+
+    const randomButton = page.getByRole('button', { name: 'Pick species for me' });
+    await expect(randomButton).toBeVisible();
+
+    await selectHumanSpecies(page);
+
+    await expect(randomButton).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Show me how they evolved!' })).toBeVisible();
+
+    await context.close();
+  });
+
+  test('should keep initial random species button visible on desktop after species selection', async ({ page }) => {
+    await page.setViewportSize({ width: 1200, height: 800 });
+    await mockSpeciesSearch(page);
+    await page.goto('http://localhost:3000');
+    await page.waitForSelector('.evolution-mapper-container');
+
+    const randomButton = page.getByRole('button', { name: 'Pick species for me' });
+    await expect(randomButton).toBeVisible();
+
+    await selectHumanSpecies(page);
+
+    await expect(randomButton).toBeVisible();
   });
 });
