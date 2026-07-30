@@ -91,6 +91,36 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .mobile-dark-mode .error-display {
+    background: #18222f;
+    border-color: #2d4055;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.36);
+  }
+
+  .mobile-dark-mode .error-message h3 {
+    color: #ffb3ad;
+  }
+
+  .mobile-dark-mode .error-message p {
+    color: #dbe5ef;
+  }
+
+  .mobile-dark-mode .retry-button {
+    background: #4f8fcb;
+  }
+
+  .mobile-dark-mode .retry-button:hover {
+    background: #6aa8e6;
+  }
+
+  .mobile-dark-mode .dismiss-button {
+    background: #4b5e72;
+  }
+
+  .mobile-dark-mode .dismiss-button:hover {
+    background: #60768c;
+  }
+
   .error-display {
     bottom: 10px;
     left: 10px;

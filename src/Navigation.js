@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import MobileThemeToggle from './MobileThemeToggle';
 import './Navigation.css';
 
-function Navigation({ hideInTreeView = false }) {
+function Navigation({ hideInTreeView = false, isMobileDarkMode = false, onMobileThemeToggle }) {
   const location = useLocation();
   
   if (hideInTreeView) {
@@ -36,6 +37,14 @@ function Navigation({ hideInTreeView = false }) {
             Attributions
           </Link>
         </div>
+
+        {onMobileThemeToggle && (
+          <MobileThemeToggle
+            isDarkMode={isMobileDarkMode}
+            onToggle={onMobileThemeToggle}
+            className="nav-theme-toggle"
+          />
+        )}
       </div>
     </nav>
   );

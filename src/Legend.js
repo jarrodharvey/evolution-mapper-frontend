@@ -30,7 +30,7 @@ const AgeGradientBar = ({ ageItems }) => {
   );
 };
 
-const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange }) => {
+const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange, isDarkMode = false }) => {
   const [legendData, setLegendData] = useState([]);
   const [actualType, setActualType] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,11 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
 
   // Use external state if provided, otherwise use internal state
   const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : internalIsCollapsed;
+  const darkLegendSurface = isDarkMode ? {
+    background: 'rgba(24, 34, 47, 0.96)',
+    borderColor: 'rgba(130, 154, 180, 0.28)',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.42)'
+  } : undefined;
 
   useEffect(() => {
     const fetchLegend = async () => {
@@ -110,7 +115,10 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
   if (loading) {
     const displayInfo = getTypeDisplayInfo(actualType);
     return (
-      <div className={`tree-legend ${isCollapsed ? 'collapsed' : ''}`}>
+      <div
+        className={`tree-legend ${isCollapsed ? 'collapsed' : ''} ${isDarkMode ? 'mobile-dark-legend' : ''}`}
+        style={darkLegendSurface}
+      >
         <div className="legend-header" onClick={toggleCollapse}>
           <div className="legend-title-container">
             <span className="legend-title">{displayInfo.title}</span>
@@ -130,7 +138,10 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
   if (error) {
     const displayInfo = getTypeDisplayInfo(actualType);
     return (
-      <div className={`tree-legend ${isCollapsed ? 'collapsed' : ''}`}>
+      <div
+        className={`tree-legend ${isCollapsed ? 'collapsed' : ''} ${isDarkMode ? 'mobile-dark-legend' : ''}`}
+        style={darkLegendSurface}
+      >
         <div className="legend-header" onClick={toggleCollapse}>
           <div className="legend-title-container">
             <span className="legend-title">{displayInfo.title}</span>
@@ -150,7 +161,10 @@ const Legend = ({ legendType, isCollapsed: externalIsCollapsed, onCollapseChange
   const displayInfo = getTypeDisplayInfo(actualType);
 
   return (
-    <div className={`tree-legend ${isCollapsed ? 'collapsed' : ''} legend-type-${actualType || 'default'}`}>
+    <div
+      className={`tree-legend ${isCollapsed ? 'collapsed' : ''} ${isDarkMode ? 'mobile-dark-legend' : ''} legend-type-${actualType || 'default'}`}
+      style={darkLegendSurface}
+    >
       <div className="legend-header" onClick={toggleCollapse}>
         <div className="legend-title-container">
           <span className="legend-title">{displayInfo.title}</span>

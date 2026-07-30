@@ -144,7 +144,14 @@ const InfoPanel = ({ open, onClose, nodeData }) => {
 
         {/* Node Type and Age Info */}
         {!isMobile && (
-          <Box sx={{ mt: 2, p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Box
+            sx={{
+              mt: 2,
+              p: 1,
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'grey.50',
+              borderRadius: 1
+            }}
+          >
             <Typography variant="caption" color="text.secondary">
               Type: {nodeData.node_type} | Age: {nodeData.age_info}
             </Typography>

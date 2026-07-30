@@ -6,9 +6,10 @@ import Legend from './Legend';
 import ProgressOverlay from './ProgressOverlay';
 import ErrorDisplay from './ErrorDisplay';
 import PhylogeneticTreeView from './components/PhylogeneticTreeView';
+import MobileThemeToggle from './MobileThemeToggle';
 import { isMobile, isMobileViewport } from './utils/mobileDetection';
 
-function EvolutionMapper({ onTreeViewChange }) {
+function EvolutionMapper({ onTreeViewChange, isMobileDarkMode = false, onMobileThemeToggle }) {
   const [selectedSpecies, setSelectedSpecies] = useState([]);
   const [treeHTML, setTreeHTML] = useState(null);
   const [treeJSON, setTreeJSON] = useState(null); // For mobile tree view
@@ -34,6 +35,7 @@ function EvolutionMapper({ onTreeViewChange }) {
   const progressIntervalRef = useRef(null);
   const [isMobileDevice] = useState(isMobile()); // Detect mobile once on component mount
   const isCurrentlyMobileViewport = isMobileViewport(); // Dynamic viewport check
+  const shouldUseMobileTreeView = isMobileDevice || isCurrentlyMobileViewport;
 
   const loadSpecies = async (inputValue) => {
     if (!inputValue || inputValue.length < 2) return [];
@@ -87,7 +89,7 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
 
-    if (isMobileDevice && treeJSON) {
+    if (shouldUseMobileTreeView && treeJSON) {
       // Only delay progress overlay if we already have a tree (collapse animation will play)
       setAllowProgressOverlay(false);
       setMobileCollapseTrigger(Date.now());
@@ -96,7 +98,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       setTimeout(() => {
         setAllowProgressOverlay(true);
       }, collapseAnimationDuration);
-    } else if (isMobileDevice) {
+    } else if (shouldUseMobileTreeView) {
       // First time generating mobile tree - no collapse animation, show progress overlay immediately
       setAllowProgressOverlay(true);
       setMobileCollapseTrigger(Date.now());
@@ -192,14 +194,14 @@ function EvolutionMapper({ onTreeViewChange }) {
       // First, try to get the full tree with dates from the unified endpoint
       setLoadingPhase('Generating phylogenetic tree with ancestral data...');
 
-      if (isMobileDevice || !showFloatingControls) {
+      if (shouldUseMobileTreeView || !showFloatingControls) {
         // Collapse UI chrome when entering tree view; always collapse on mobile to maximize viewport
         setIsToolbarCollapsed(true);
         setLegendCollapsed(true);
       }
 
       // Add as_json parameter for mobile devices
-      const asJsonParam = isMobileDevice ? '&as_json=true' : '';
+      const asJsonParam = shouldUseMobileTreeView ? '&as_json=true' : '';
 
       const data = await apiRequest('/api/full-tree-dated', {
         method: 'POST',
@@ -213,7 +215,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       if (data.success === true || data.success[0] === true) {
         // Success with the unified endpoint - store tree data but don't render yet
         let treeHtmlData = null;
-        if (isMobileDevice) {
+        if (shouldUseMobileTreeView) {
           // Store JSON data for mobile tree view
           setTreeJSON(data);
         } else {
@@ -262,7 +264,7 @@ function EvolutionMapper({ onTreeViewChange }) {
           setShowFloatingControls(true);
 
           // Show drag hint for trees with more than 7 species (desktop only, since mobile doesn't need drag)
-          if (selectedSpecies.length > 7 && !isMobileDevice) {
+          if (selectedSpecies.length > 7 && !shouldUseMobileTreeView) {
             setShowDragHint(true);
           }
 
@@ -311,7 +313,7 @@ function EvolutionMapper({ onTreeViewChange }) {
     setError(null);
     setTreeError(null);
 
-    if (isMobileDevice && treeJSON) {
+    if (shouldUseMobileTreeView && treeJSON) {
       // Only delay progress overlay if we already have a tree (collapse animation will play)
       setAllowProgressOverlay(false);
       setMobileCollapseTrigger(Date.now());
@@ -320,7 +322,7 @@ function EvolutionMapper({ onTreeViewChange }) {
       setTimeout(() => {
         setAllowProgressOverlay(true);
       }, collapseAnimationDuration);
-    } else if (isMobileDevice) {
+    } else if (shouldUseMobileTreeView) {
       // First time generating mobile tree - no collapse animation, show progress overlay immediately
       setAllowProgressOverlay(true);
       setMobileCollapseTrigger(Date.now());
@@ -615,15 +617,51 @@ function EvolutionMapper({ onTreeViewChange }) {
   };
 
   // Custom styles for react-select to prevent clock symbol truncation and highlight unavailable species
-  const getCustomStyles = () => ({
+  const getCustomStyles = () => {
+    const isDarkSelect = isMobileDarkMode && (isMobileDevice || isCurrentlyMobileViewport);
+    const colors = isDarkSelect ? {
+      controlBg: '#18222f',
+      controlBorder: '#3d5066',
+      controlHoverBorder: '#6aa8e6',
+      menuBg: '#18222f',
+      optionFocusedBg: '#22364c',
+      optionSelectedBg: '#1f6fb2',
+      text: '#f2f6fb',
+      muted: '#a8b6c7',
+      tagBg: '#26374a',
+      tagText: '#eef4fb',
+      tagRemoveHover: '#38516d',
+      unavailableBg: '#3a2024',
+      unavailableBorder: '#f08a84',
+      unavailableText: '#ffb3ad',
+      focusShadow: '0 0 0 1px #6aa8e6'
+    } : {
+      controlBg: 'white',
+      controlBorder: '#e9ecef',
+      controlHoverBorder: '#3498db',
+      menuBg: 'white',
+      optionFocusedBg: '#f1f8ff',
+      optionSelectedBg: '#3498db',
+      text: '#2c3e50',
+      muted: '#95a5a6',
+      tagBg: '#e9ecef',
+      tagText: '#2c3e50',
+      tagRemoveHover: '#d0d7de',
+      unavailableBg: '#fee',
+      unavailableBorder: '#e74c3c',
+      unavailableText: '#e74c3c',
+      focusShadow: '0 0 0 1px #3498db'
+    };
+
+    return ({
     multiValue: (provided, state) => {
       const isUnavailable = Array.isArray(unavailableSpecies) ? unavailableSpecies.includes(state.data.data.common) : false;
       return {
         ...provided,
         maxWidth: 'none', // Remove max-width constraints
         minWidth: 'fit-content', // Ensure it fits content including clock
-        backgroundColor: isUnavailable ? '#fee' : provided.backgroundColor,
-        border: isUnavailable ? '1px solid #e74c3c' : provided.border,
+        backgroundColor: isUnavailable ? colors.unavailableBg : colors.tagBg,
+        border: isUnavailable ? `1px solid ${colors.unavailableBorder}` : provided.border,
         margin: '1px 2px', // Reduce spacing between tags
         fontSize: '0.8rem', // Smaller font for tags
       };
@@ -637,7 +675,7 @@ function EvolutionMapper({ onTreeViewChange }) {
         textOverflow: 'clip', // Don't add ellipsis
         maxWidth: 'none', // Remove max-width constraints
         minWidth: 'fit-content', // Ensure it fits the full content
-        color: isUnavailable ? '#e74c3c' : provided.color,
+        color: isUnavailable ? colors.unavailableText : colors.tagText,
         fontWeight: isUnavailable ? '600' : provided.fontWeight,
         padding: '2px 4px', // Reduce padding inside tags
         fontSize: '0.8rem', // Smaller font for tags
@@ -647,11 +685,11 @@ function EvolutionMapper({ onTreeViewChange }) {
       const isUnavailable = Array.isArray(unavailableSpecies) ? unavailableSpecies.includes(state.data.data.common) : false;
       return {
         ...provided,
-        color: isUnavailable ? '#e74c3c' : provided.color,
+        color: isUnavailable ? colors.unavailableText : colors.muted,
         padding: '0 2px', // Reduce padding on remove button
         ':hover': {
-          backgroundColor: isUnavailable ? '#e74c3c' : provided[':hover'].backgroundColor,
-          color: isUnavailable ? 'white' : provided[':hover'].color,
+          backgroundColor: isUnavailable ? colors.unavailableBorder : colors.tagRemoveHover,
+          color: isUnavailable ? 'white' : colors.text,
         },
       };
     },
@@ -659,6 +697,13 @@ function EvolutionMapper({ onTreeViewChange }) {
       ...provided,
       minHeight: showFloatingControls ? '44px' : 'auto', // Taller height in floating mode to use available space
       padding: showFloatingControls ? '4px' : provided.padding, // Increase padding in floating mode
+      backgroundColor: colors.controlBg,
+      borderColor: state.isFocused ? colors.controlHoverBorder : colors.controlBorder,
+      boxShadow: state.isFocused ? colors.focusShadow : provided.boxShadow,
+      color: colors.text,
+      ':hover': {
+        borderColor: colors.controlHoverBorder
+      }
     }),
     valueContainer: (provided) => ({
       ...provided,
@@ -676,8 +721,55 @@ function EvolutionMapper({ onTreeViewChange }) {
       paddingTop: '0px',
       paddingBottom: '0px',
       fontSize: '16px', // Prevent zoom on iOS devices
+      color: colors.text,
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: colors.muted,
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: colors.text,
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: colors.menuBg,
+      border: `1px solid ${colors.controlBorder}`,
+      boxShadow: isDarkSelect ? '0 10px 24px rgba(0, 0, 0, 0.45)' : provided.boxShadow,
+      zIndex: 10002,
+    }),
+    menuList: (provided) => ({
+      ...provided,
+      backgroundColor: colors.menuBg,
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isSelected
+        ? colors.optionSelectedBg
+        : state.isFocused
+          ? colors.optionFocusedBg
+          : colors.menuBg,
+      color: state.isSelected ? 'white' : colors.text,
+      ':active': {
+        backgroundColor: colors.optionSelectedBg,
+      },
+    }),
+    clearIndicator: (provided) => ({
+      ...provided,
+      color: colors.muted,
+      ':hover': {
+        color: colors.text,
+      },
+    }),
+    dropdownIndicator: (provided) => ({
+      ...provided,
+      color: colors.muted,
+      ':hover': {
+        color: colors.text,
+      },
     }),
   });
+  };
 
   const getTreeHeight = () => {
     if (!treeHTML) return '600px';
@@ -696,7 +788,6 @@ function EvolutionMapper({ onTreeViewChange }) {
   };
 
   // Prevent lingering overlays once a tree (or error) is available
-  const shouldUseMobileTreeView = isMobileDevice || isCurrentlyMobileViewport;
   const isTreeReady = shouldUseMobileTreeView ? Boolean(treeJSON) : Boolean(treeHTML);
   const shouldShowProgressOverlay = (loading || showProgressTracker) && !treeError && allowProgressOverlay;
 
@@ -718,6 +809,7 @@ function EvolutionMapper({ onTreeViewChange }) {
           message={loadingPhase}
           countdown={countdown}
           progressData={progressData}
+          isDarkMode={isMobileDarkMode}
         />
       )}
 
@@ -738,6 +830,14 @@ function EvolutionMapper({ onTreeViewChange }) {
           >
             {isToolbarCollapsed ? '▼' : '▲'}
           </button>
+
+          {onMobileThemeToggle && (
+            <MobileThemeToggle
+              isDarkMode={isMobileDarkMode}
+              onToggle={onMobileThemeToggle}
+              className="floating-theme-toggle"
+            />
+          )}
           
           {!isToolbarCollapsed && (
             <>
@@ -932,7 +1032,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                   <span className="hint-text">Drag to pan around the tree</span>
                 </div>
               )}
-              {isMobileDevice ? (
+              {shouldUseMobileTreeView ? (
                 // Mobile: Show MUI Tree View
                 treeJSON ? (
                   <PhylogeneticTreeView
@@ -940,6 +1040,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                     legendType={legendType}
                     collapseToRootSignal={mobileCollapseTrigger}
                     onExpandedItemsChange={handleExpandedItemsChange}
+                    isDarkMode={isMobileDarkMode}
                   />
                 ) : treeError ? (
                   <ErrorDisplay
@@ -979,6 +1080,7 @@ function EvolutionMapper({ onTreeViewChange }) {
                 legendType={legendType}
                 isCollapsed={legendCollapsed}
                 onCollapseChange={setLegendCollapsed}
+                isDarkMode={isMobileDarkMode}
               />
             </div>
           </div>

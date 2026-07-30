@@ -4,11 +4,20 @@ import { RichTreeView } from '@mui/x-tree-view/RichTreeView';
 import TreeNodeItem from './TreeNodeItem';
 import InfoPanel from './InfoPanel';
 
-// Create a custom theme for the tree view
-const treeTheme = createTheme({
+const createTreeTheme = (isDarkMode) => createTheme({
   palette: {
+    mode: isDarkMode ? 'dark' : 'light',
     primary: {
-      main: '#1976d2',
+      main: isDarkMode ? '#6aa8e6' : '#1976d2',
+      light: isDarkMode ? '#284863' : '#63a4ff',
+    },
+    background: {
+      default: isDarkMode ? '#101820' : '#ffffff',
+      paper: isDarkMode ? '#18222f' : '#ffffff',
+    },
+    text: {
+      primary: isDarkMode ? '#f2f6fb' : 'rgba(0, 0, 0, 0.87)',
+      secondary: isDarkMode ? '#a8b6c7' : 'rgba(0, 0, 0, 0.6)',
     },
   },
   components: {
@@ -21,13 +30,14 @@ const treeTheme = createTheme({
             paddingRight: 0,
             paddingLeft: `calc(${theme.spacing(1)} + var(--TreeView-itemChildrenIndentation) * var(--TreeView-itemDepth))`,
             borderRadius: '4px',
+            color: theme.palette.text.primary,
             '&:hover': {
-              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+              backgroundColor: isDarkMode ? 'rgba(106, 168, 230, 0.14)' : 'rgba(25, 118, 210, 0.08)',
             },
             '&.Mui-selected': {
-              backgroundColor: 'rgba(25, 118, 210, 0.12)',
+              backgroundColor: isDarkMode ? 'rgba(106, 168, 230, 0.20)' : 'rgba(25, 118, 210, 0.12)',
               '&:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.16)',
+                backgroundColor: isDarkMode ? 'rgba(106, 168, 230, 0.28)' : 'rgba(25, 118, 210, 0.16)',
               },
             },
           },
@@ -37,10 +47,26 @@ const treeTheme = createTheme({
         }),
       },
     },
+    MuiDialog: {
+      styleOverrides: {
+        paper: ({ theme }) => ({
+          backgroundImage: 'none',
+          backgroundColor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+        }),
+      },
+    },
+    MuiDialogContent: {
+      styleOverrides: {
+        root: ({ theme }) => ({
+          borderColor: isDarkMode ? '#31445a' : theme.palette.divider,
+        }),
+      },
+    },
   },
 });
 
-const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onExpandedItemsChange }) => {
+const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onExpandedItemsChange, isDarkMode = false }) => {
   const [selectedInfoNode, setSelectedInfoNode] = useState(null);
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState([]);
@@ -50,6 +76,7 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onEx
   const phylopicStatusRef = useRef(new Map());
   const secondPassAttemptedRef = useRef(false);
   const expansionAuditTimeoutRef = useRef(null);
+  const treeTheme = useMemo(() => createTreeTheme(isDarkMode), [isDarkMode]);
 
   useEffect(() => {
     expandedItemsRef.current = expandedItems;
@@ -378,6 +405,8 @@ const PhylogeneticTreeView = ({ treeData, legendType, collapseToRootSignal, onEx
           WebkitOverflowScrolling: 'touch',
           padding: 2,
           paddingBottom: 4,
+          backgroundColor: isDarkMode ? 'background.default' : 'transparent',
+          color: 'text.primary',
           '& .MuiTreeView-root': {
             minHeight: '100%',
           }

@@ -21,14 +21,14 @@ test.describe('Mobile Tree View Basic Functionality', () => {
     await randomButton.waitFor({ state: 'visible' });
     await randomButton.click();
 
-    // Wait for progress checklist to appear
-    await page.waitForSelector('.progress-checklist', { timeout: 10000 });
-    console.log('Progress checklist appeared');
+    // Wait for progress overlay to appear
+    await page.waitForSelector('.progress-overlay', { timeout: 10000 });
+    console.log('Progress overlay appeared');
 
-    // Wait for progress to complete by watching for the disappearance of progress checklist
+    // Wait for progress to complete by watching for the disappearance of progress overlay
     await page.waitForFunction(() => {
-      const progressChecklist = document.querySelector('.progress-checklist');
-      return !progressChecklist || progressChecklist.style.display === 'none';
+      const progressOverlay = document.querySelector('.progress-overlay');
+      return !progressOverlay || progressOverlay.style.display === 'none';
     }, { timeout: 120000 }); // 2 minutes max for backend processing
     console.log('Progress completed');
 

@@ -72,6 +72,36 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+  .progress-overlay.mobile-dark-progress,
+  .mobile-dark-mode .progress-overlay {
+    background: rgba(16, 24, 32, 0.94);
+  }
+
+  .progress-overlay.mobile-dark-progress .progress-content,
+  .mobile-dark-mode .progress-content {
+    background: #18222f;
+    border-color: #2d4055;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+  }
+
+  .progress-overlay.mobile-dark-progress .progress-active-step,
+  .progress-overlay.mobile-dark-progress .progress-message,
+  .mobile-dark-mode .progress-active-step,
+  .mobile-dark-mode .progress-message {
+    color: #f2f6fb;
+  }
+
+  .progress-overlay.mobile-dark-progress .progress-step-marker,
+  .mobile-dark-mode .progress-step-marker {
+    background-color: #6aa8e6;
+    box-shadow: 0 0 0 2px rgba(106, 168, 230, 0.24);
+  }
+
+  .progress-overlay.mobile-dark-progress .progress-countdown,
+  .mobile-dark-mode .progress-countdown {
+    color: #ffb3ad;
+  }
+
   .progress-content {
     margin: 20px;
     padding: 24px;

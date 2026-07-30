@@ -51,7 +51,7 @@ const getActiveSteps = (progressData) => {
     }));
 };
 
-const ProgressOverlay = ({ show, message, countdown = null, progressData }) => {
+const ProgressOverlay = ({ show, message, countdown = null, progressData, isDarkMode = false }) => {
   if (!show) return null;
 
   const activeSteps = getActiveSteps(progressData);
@@ -59,10 +59,15 @@ const ProgressOverlay = ({ show, message, countdown = null, progressData }) => {
 
   return (
     <Portal>
-      <div className="progress-overlay">
+      <div className={`progress-overlay ${isDarkMode ? 'mobile-dark-progress' : ''}`}>
         <div className="progress-content">
           <div className="progress-wheel-wrapper">
-            <CircularProgress size={72} thickness={5} aria-label="Tree generation in progress" />
+            <CircularProgress
+              size={72}
+              thickness={5}
+              aria-label="Tree generation in progress"
+              sx={isDarkMode ? { color: '#6aa8e6' } : undefined}
+            />
             {activeSteps.length > 0 && (
               <ul className="progress-active-steps">
                 {activeSteps.map(({ key, label }) => (

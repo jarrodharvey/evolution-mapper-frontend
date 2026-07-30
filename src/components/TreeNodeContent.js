@@ -29,6 +29,8 @@ const TreeNodeContent = ({
   } = safeData;
 
   const defaultColor = color || '#999999';
+  const circleBorderColor = (theme) => theme.palette.mode === 'dark' ? '#223245' : 'white';
+  const ageLabelColor = (theme) => theme.palette.mode === 'dark' ? '#8cc7ff' : '#1976d2';
 
   const normalizedShape = typeof node_shape === 'string' ? node_shape.trim() : '';
   const normalizedPhylopicUuid = typeof phylopic_uuid === 'string' ? phylopic_uuid.trim() : '';
@@ -288,8 +290,10 @@ const TreeNodeContent = ({
           height: 24,
           borderRadius: '50%',
           backgroundColor: defaultColor,
-          border: '2px solid white',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+          border: (theme) => `2px solid ${circleBorderColor(theme)}`,
+          boxShadow: (theme) => theme.palette.mode === 'dark'
+            ? '0 1px 4px rgba(0, 0, 0, 0.45)'
+            : '0 1px 3px rgba(0,0,0,0.2)'
         }}
       />
     );
@@ -378,7 +382,7 @@ const TreeNodeContent = ({
           sx={{
             flex: 1,
             fontWeight: node_type === 'species' ? 600 : 400,
-            color: has_age ? '#1976d2' : 'text.primary',
+            color: has_age ? ageLabelColor : 'text.primary',
             fontSize: node_type === 'species' ? '0.9rem' : '0.85rem',
             lineHeight: 1.4,
             overflow: { xs: 'visible', md: 'hidden' },

@@ -2,6 +2,56 @@
   min-height: 100vh;
 }
 
+.mobile-theme-toggle {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 54px;
+  height: 32px;
+  padding: 4px 6px;
+  border: 1px solid rgba(44, 62, 80, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #2c3e50;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.mobile-theme-toggle-icon {
+  width: 14px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.mobile-theme-toggle-track {
+  width: 24px;
+  height: 14px;
+  border-radius: 999px;
+  background: #cfd8dc;
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.mobile-theme-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+.mobile-theme-toggle.active .mobile-theme-toggle-track {
+  background: #4f8fcb;
+}
+
+.mobile-theme-toggle.active .mobile-theme-toggle-thumb {
+  transform: translateX(10px);
+}
+
 .evolution-mapper-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -635,6 +685,10 @@
   transform: none; /* Remove translateY since we're repositioning below info */
 }
 
+.floating-theme-toggle {
+  display: none;
+}
+
 .floating-random-button,
 .floating-generate-button {
   padding: 6px 12px;
@@ -674,9 +728,72 @@
   .App {
     padding: 10px;
   }
+
+  .App.mobile-dark-mode {
+    background: #101820;
+    color: #f2f6fb;
+  }
+
+  .App.mobile-dark-mode.tree-view {
+    background: #101820;
+  }
+
+  .mobile-dark-mode .evolution-mapper-container {
+    background: #101820;
+  }
+
+  .mobile-dark-mode .App-header h1,
+  .mobile-dark-mode .species-selector h2,
+  .mobile-dark-mode .tree-display h2 {
+    color: #f2f6fb;
+  }
+
+  .mobile-dark-mode .App-header p,
+  .mobile-dark-mode .App-header .data-explanation,
+  .mobile-dark-mode .selection-info p,
+  .mobile-dark-mode .floating-species-info,
+  .mobile-dark-mode .floating-options {
+    color: #a8b6c7;
+  }
   
   .App-main {
     padding: 20px;
+  }
+
+  .mobile-dark-mode .App-main {
+    background: #18222f;
+    border: 1px solid #2d4055;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+  }
+
+  .mobile-dark-mode .App-main.floating-mode {
+    background: #101820;
+    border: none;
+    box-shadow: none;
+  }
+
+  .mobile-dark-mode .species-select .css-control,
+  .mobile-dark-mode .floating-species-select .css-control {
+    background: #18222f;
+    border-color: #3d5066;
+  }
+
+  .mobile-dark-mode .tree-display {
+    border-top-color: #2d4055;
+  }
+
+  .mobile-dark-mode .tree-container {
+    background: #101820;
+  }
+
+  .mobile-dark-mode .mobile-theme-toggle {
+    background: rgba(24, 34, 47, 0.92);
+    border-color: #3d5066;
+    color: #f2f6fb;
+  }
+
+  .mobile-dark-mode .mobile-theme-toggle:hover {
+    border-color: #6aa8e6;
   }
   
   .species-selector-header {
@@ -691,6 +808,12 @@
     gap: 15px;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .mobile-dark-mode .floating-toolbar {
+    background: rgba(16, 24, 32, 0.96);
+    border-bottom-color: rgba(130, 154, 180, 0.24);
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.38);
   }
 
   .floating-toolbar.collapsed {
@@ -717,6 +840,13 @@
 
   .floating-action-buttons {
     order: 3;
+    align-items: center;
+  }
+
+  .floating-theme-toggle {
+    display: inline-flex;
+    height: 30px;
+    min-width: 50px;
   }
 
   .floating-exit-button {
@@ -1122,6 +1252,84 @@
 }
 
 @media (max-width: 768px) {
+  .tree-legend.mobile-dark-legend,
+  .App.mobile-dark-mode .tree-legend {
+    background: rgba(24, 34, 47, 0.96) !important;
+    border-color: rgba(130, 154, 180, 0.28) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+  }
+
+  .tree-legend.mobile-dark-legend .legend-header,
+  .App.mobile-dark-mode .legend-header {
+    color: #f2f6fb;
+    border-bottom-color: #2d4055;
+  }
+
+  .tree-legend.mobile-dark-legend .legend-header:hover,
+  .tree-legend.mobile-dark-legend .legend-item:hover .legend-label,
+  .App.mobile-dark-mode .legend-header:hover,
+  .App.mobile-dark-mode .legend-item:hover .legend-label {
+    color: #8cc7ff;
+  }
+
+  .tree-legend.mobile-dark-legend .legend-title,
+  .tree-legend.mobile-dark-legend .legend-label,
+  .tree-legend.mobile-dark-legend .legend-section-header,
+  .tree-legend.mobile-dark-legend .legend-column .legend-section-header,
+  .App.mobile-dark-mode .legend-title,
+  .App.mobile-dark-mode .legend-label,
+  .App.mobile-dark-mode .legend-section-header,
+  .App.mobile-dark-mode .legend-column .legend-section-header {
+    color: #f2f6fb;
+  }
+
+  .tree-legend.mobile-dark-legend .legend-subtitle,
+  .tree-legend.mobile-dark-legend .legend-description,
+  .tree-legend.mobile-dark-legend .legend-loading,
+  .tree-legend.mobile-dark-legend .legend-color-name,
+  .tree-legend.mobile-dark-legend .legend-attribution,
+  .tree-legend.mobile-dark-legend .age-label-older,
+  .tree-legend.mobile-dark-legend .age-label-younger,
+  .App.mobile-dark-mode .legend-subtitle,
+  .App.mobile-dark-mode .legend-description,
+  .App.mobile-dark-mode .legend-loading,
+  .App.mobile-dark-mode .legend-color-name,
+  .App.mobile-dark-mode .legend-attribution,
+  .App.mobile-dark-mode .age-label-older,
+  .App.mobile-dark-mode .age-label-younger {
+    color: #a8b6c7;
+  }
+
+  .tree-legend.mobile-dark-legend .legend-section-header,
+  .tree-legend.mobile-dark-legend .legend-column .legend-section-header,
+  .App.mobile-dark-mode .legend-section-header,
+  .App.mobile-dark-mode .legend-column .legend-section-header {
+    border-bottom-color: #4f8fcb;
+  }
+
+  .tree-legend.mobile-dark-legend .legend-color,
+  .tree-legend.mobile-dark-legend .age-gradient-bar-full,
+  .App.mobile-dark-mode .legend-color,
+  .App.mobile-dark-mode .age-gradient-bar-full {
+    border-color: rgba(210, 225, 240, 0.32);
+  }
+
+  .tree-legend.mobile-dark-legend .legend-color.hollow-circle,
+  .App.mobile-dark-mode .legend-color.hollow-circle {
+    border-color: #c8d4e1;
+  }
+
+  .tree-legend.mobile-dark-legend .phylopic-silhouette.neutral-silhouette,
+  .App.mobile-dark-mode .phylopic-silhouette.neutral-silhouette {
+    filter: invert(1) brightness(1.4);
+  }
+
+  .tree-legend.mobile-dark-legend .legend-item:hover,
+  .App.mobile-dark-mode .legend-item:hover {
+    background-color: rgba(106, 168, 230, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+  }
+
   .tree-legend {
     bottom: 10px;
     left: 10px;
