@@ -20,12 +20,12 @@ test('Random species functionality works with new API endpoint', async ({ page }
   const speciesTokens = await page.locator('.floating-species-picker .css-1fdsijx-ValueContainer2 .css-qbdosj-Input').count();
   console.log(`Selected species in floating toolbar: ${speciesTokens}`);
   
-  // Verify we have 3-7 species (as per the random count range)
+  // Verify we have 3-20 species (as per the random count range)
   const speciesInfo = await page.locator('.floating-species-info').textContent();
   console.log(`Species info: ${speciesInfo}`);
   
   // Check that species info shows selected count
-  await expect(page.locator('.floating-species-info')).toContainText(/Selected: [3-7] species/);
+  await expect(page.locator('.floating-species-info')).toContainText(/Selected: ([3-9]|1[0-9]|20) species/);
   
   console.log('✅ Random species functionality test passed!');
 });

@@ -345,7 +345,7 @@ function EvolutionMapper({ onTreeViewChange, isMobileDarkMode = false, onMobileT
     setCountdown(null);
 
     try {
-      const count = Math.floor(Math.random() * 5) + 3; // Random between 3-7 species
+      const count = Math.floor(Math.random() * 18) + 3; // Random between 3-20 species
       const data = await apiRequest(`/api/random-species?count=${count}`);
       
       if ((data.success === true || data.success[0] === true) && data.selected_species) {
